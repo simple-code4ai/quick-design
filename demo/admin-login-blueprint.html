@@ -1,0 +1,288 @@
+<title>可交互蓝图 · 后台端·登录 设计稿 · v1</title>
+
+<style>
+  /* ══════════════════════════════════════════════════════════
+     ① 令牌:两套
+       A. 蓝图外壳:设计稿页面自身的外观(本段基本不改,中性即可)
+       B. 产品示例:演示产品「星云工作台」后台端令牌(整套演示稿共用,
+          开工前替换成你项目的令牌;这里仅作演示,不是标准)
+     ══════════════════════════════════════════════════════════ */
+  :root {
+    /* A. 蓝图外壳 */
+    --bp-page: #1b1d20;
+    --bp-panel: #222529;
+    --bp-input: #2b2d30;
+    --bp-border: #33363b;
+    --bp-text: #a9b7c6;
+    --bp-text-2: #8b949e;
+    --bp-text-3: #6a737b;
+
+    /* B. 演示产品·后台端令牌(整套演示稿统一,勿单稿改动) */
+    --bg: #14161a;            /* 应用背景 */
+    --bg-surface: #1c1f24;    /* 面板/侧栏 */
+    --bg-hover: #262a31;      /* 悬停 */
+    --border: #33373f;        /* 分割线 */
+    --text: #e8eaee;          /* 主文字 */
+    --text-muted: #9aa3ad;    /* 次级文字 */
+    --text-dim: #6a737d;      /* 弱化文字 */
+    --accent: #4f7cff;        /* 品牌蓝 */
+    --accent-soft: #2a3d6b;
+    --accent-text: #b9cdff;
+    --danger: #e0534f;        /* 危险 */
+    --success: #3fae7a;       /* 成功 */
+    --warning: #e0a53a;       /* 警告 */
+    --on-accent: #ffffff;     /* 强调色上的文字 */
+    --mono: ui-monospace, "Cascadia Mono", Consolas, "Courier New", monospace;
+    --sans: "Segoe UI", system-ui, -apple-system, "Microsoft YaHei", "PingFang SC", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bp-page); color: var(--bp-text); font-family: var(--sans); font-size: 14px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  .page { max-width: 1280px; margin: 0 auto; padding: 40px 24px 64px; }
+
+  /* 页头 */
+  .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-text); margin: 0 0 10px; }
+  h1 { font-size: 30px; font-weight: 650; color: #d8e0ea; margin: 0 0 10px; }
+  .lede { font-size: 14px; color: var(--bp-text-2); max-width: 900px; margin: 0 0 22px; }
+
+  /* 控件条 */
+  .controls { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 16px; font-size: 12.5px; color: var(--bp-text-2); }
+  .chip { display: flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--bp-border); border-radius: 999px; cursor: pointer; background: var(--bp-panel); color: var(--bp-text); user-select: none; }
+  .chip input { accent-color: var(--accent); }
+  .controls button { background: var(--bp-panel); color: var(--bp-text); border: 1px solid var(--bp-border); border-radius: 6px; padding: 4px 10px; font-family: var(--sans); font-size: 12.5px; cursor: pointer; }
+  .controls button:hover { background: var(--bp-input); }
+  .hint { flex: 1 1 100%; color: var(--bp-text-3); font-size: 12px; }
+
+  .mock-scroll { overflow-x: auto; padding-bottom: 6px; }
+
+  /* 分区标注 */
+  .zone-label {
+    position: absolute; top: 4px; left: 50%; transform: translateX(-50%);
+    font-size: 10px; letter-spacing: .05em; color: var(--accent-text);
+    background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 4px;
+    padding: 1px 7px; white-space: nowrap; z-index: 40;
+    opacity: 0; pointer-events: none; transition: opacity .15s ease;
+  }
+  .show-zones .zone-label { opacity: 1; }
+
+  /* 画布尺寸标注(标题旁徽标):页面渲染非 1:1,徽标给出真实画布宽高 */
+  .canvas-annot {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 500; vertical-align: middle;
+    color: var(--bp-text-2); background: var(--bp-panel);
+    border: 1px solid var(--bp-border); border-radius: 999px;
+    padding: 2px 10px; margin-left: 10px; white-space: nowrap;
+    letter-spacing: .02em;
+  }
+  .canvas-annot b { font-family: var(--mono); font-weight: 500; letter-spacing: .01em; color: var(--accent-text); }
+  .show-zones .canvas-annot { border-color: var(--accent); color: var(--accent-text); background: var(--accent-soft); }
+  /* 图例 + 决策 */
+  .legend { margin-top: 26px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 720px) { .legend { grid-template-columns: 1fr; } }
+  .card { background: var(--bp-panel); border: 1px solid var(--bp-border); border-radius: 8px; padding: 16px 18px; }
+  .card h3 { margin: 0 0 10px; font-size: 13px; color: var(--bp-text); display: flex; align-items: center; gap: 8px; }
+  .card h3 .dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+  .dot.fixed { background: var(--accent); }
+  .dot.dyn { background: var(--danger); }
+  .card ul { list-style: none; margin: 0; padding: 0; }
+  .card li { font-size: 12.5px; color: var(--bp-text-2); padding: 4px 0; display: flex; gap: 8px; }
+  .card li b { color: var(--bp-text); font-weight: 600; white-space: nowrap; }
+  .card li .d { color: var(--bp-text-3); font-size: 11.5px; margin-left: auto; white-space: nowrap; align-self: center; }
+  .card li code { font-family: var(--mono); font-size: 11px; background: var(--bp-input); border: 1px solid var(--bp-border); border-radius: 4px; padding: 0 5px; color: var(--accent-text); }
+  .notes { margin-top: 16px; }
+  .notes ol { margin: 0; padding-left: 20px; }
+  .notes li { font-size: 12.5px; color: var(--bp-text-2); padding: 3px 0; }
+  .notes li b { color: var(--bp-text); }
+  .footer { margin-top: 24px; font-size: 11.5px; color: var(--bp-text-3); }
+  .footer code { font-family: var(--mono); font-size: 11px; color: var(--accent-text); }
+
+  /* ══════════════════════════════════════════════════════════
+     ③ 产品样式:后台端·登录(登录窗口)
+       界面样式一律用 B 组产品令牌,不许写死色值。
+     ══════════════════════════════════════════════════════════ */
+  .surface {
+    width: 1000px; height: 560px;
+    background: var(--bg);
+    border: 1px solid var(--bp-border); border-radius: 8px;
+    position: relative; overflow: hidden;
+  }
+  /* 登录卡:左右两栏 —— 品牌区 + 表单区 */
+  .login { display: flex; height: 100%; }
+  .login-brand {
+    flex: 0 0 360px; background: var(--bg-surface); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; justify-content: center; padding: 40px 32px; gap: 10px;
+    position: relative;
+  }
+  .login-brand .logo {
+    width: 40px; height: 40px; border-radius: 10px; background: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 700; color: var(--on-accent); margin-bottom: 6px;
+  }
+  .login-brand h2 { margin: 0; font-size: 22px; font-weight: 650; color: var(--text); }
+  .login-brand p { margin: 0; font-size: 12.5px; color: var(--text-muted); line-height: 1.6; }
+  .login-form {
+    flex: 1; display: flex; flex-direction: column; justify-content: center;
+    padding: 48px 72px; gap: 14px; position: relative;
+  }
+  .login-form h3 { margin: 0 0 2px; font-size: 16px; color: var(--text); }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 12px; color: var(--text-muted); }
+  .field input {
+    background: var(--bg-surface); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); font-family: var(--sans); font-size: 13px; padding: 8px 10px; outline: none;
+  }
+  .field input:focus { border-color: var(--accent); }
+  .row { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--text-muted); }
+  .row label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .row input { accent-color: var(--accent); }
+  .btn {
+    background: var(--accent); color: var(--on-accent); border: none; border-radius: 6px;
+    padding: 9px 0; font-family: var(--sans); font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  .btn:disabled { opacity: .55; cursor: default; }
+  .err { font-size: 12px; color: var(--danger); min-height: 16px; }
+  .login-foot { position: absolute; bottom: 14px; left: 72px; right: 72px; display: flex; justify-content: space-between; font-size: 11px; color: var(--text-dim); }
+  .suc { color: var(--success); font-size: 13px; }
+</style>
+
+<div class="page">
+  <!-- ④ 定版标识:产品 · 里程碑 · 蓝图 · 日期 · v版本 -->
+  <p class="eyebrow">演示集 · 后台端 · 蓝图 · 2026-08-08 · v1</p>
+  <!-- ⑤ 一句话论点 -->
+  <h1>后台端·登录:左侧品牌、右侧表单的双栏卡,一次登录只做一件事<span class="canvas-annot" title="页面非 1:1 渲染,此徽标给出真实画布宽高">画布 <b>1920×1080</b></span></h1>
+  <!-- ⑥ 设计者立场 -->
+  <p class="lede">
+    登录是后台入口,状态最轻(未登录/登录中/已登录),但验证规则和反馈必须有。本稿把登录窗口拆成
+    「品牌区 + 表单区」两块固定骨架,表单内账户/密码/记住我/提交是可点的动态状态;
+    整套演示稿按后台端 1920×1080 画布标注。
+  </p>
+
+  <!-- ⑦ 交互开关 + 操作引导 -->
+  <div class="controls">
+    <label class="chip"><input type="checkbox" id="zonesToggle"> 显示分区(骨架)</label>
+    <button id="reset">↺ 重置默认布局</button>
+    <span class="hint">输入账户/密码后点「登 录」,可依次看到 校验失败 → 登录中 → 登录成功 三态;点重置回默认。</span>
+  </div>
+
+  <div class="mock-scroll">
+    <!-- ⑧ 界面本体:后台端·登录窗口 -->
+    <div class="surface" id="surface">
+      <div class="login">
+        <div class="login-brand">
+          <div class="logo">星</div>
+          <h2>星云工作台</h2>
+          <p>运营、商品、订单、数据分析,一个后台管完。</p>
+          <span class="zone-label">Brand · 360px</span>
+        </div>
+        <div class="login-form">
+          <h3>登录后台</h3>
+          <div class="field">
+            <label for="acc">账户</label>
+            <input id="acc" type="text" placeholder="工号 / 手机号" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="pwd">密码</label>
+            <input id="pwd" type="password" placeholder="请输入密码">
+          </div>
+          <div class="row">
+            <label><input id="remember" type="checkbox" checked> 记住我</label>
+            <a href="#" style="color:var(--accent-text);">忘记密码?</a>
+          </div>
+          <button class="btn" id="loginBtn">登 录</button>
+          <div class="err" id="err"></div>
+          <div class="suc" id="suc"></div>
+          <span class="zone-label">Form · 状态驱动</span>
+        </div>
+      </div>
+      <div class="login-foot"><span>星云工作台 v4.2.0</span><span>© 2026 Nebula Team</span></div>
+      <span class="zone-label">Surface · 1000×560</span>
+    </div>
+  </div>
+
+  <!-- ⑨ 图例 -->
+  <div class="legend">
+    <div class="card">
+      <h3><span class="dot fixed"></span> 固定层 · 骨架(代码写死)</h3>
+      <ul>
+        <li><b>登录窗口</b><span class="d">1000×560</span></li>
+        <li><b>品牌区</b><span class="d">360px</span></li>
+        <li><b>表单区</b><span class="d">flex:1</span></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3><span class="dot dyn"></span> 动态层 · 内容(状态/注册表加载)</h3>
+      <ul>
+        <li><b>账户 / 密码 / 记住我</b><span class="d">表单输入</span></li>
+        <li><b>登录按钮</b> <code>idle → error → loading → success</code></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ⑩ 决策清单 -->
+  <div class="notes">
+    <h3 style="font-size:13px;color:var(--bp-text);margin:0 0 8px;">布局决策</h3>
+    <ol>
+      <li><b>登录拆两栏</b>:左品牌右表单,一次登录只放一个焦点;品牌区承担入口的「公司感」,表单区保持极简(为什么:登录页信息越少,输错率越低)。</li>
+      <li><b>四态反馈</b>:校验失败红字 → 登录中禁用按钮 → 成功绿色提示,三态都经 render() 重绘(为什么:后台并发高,状态不清容易反复提交)。</li>
+      <li><b>宽度 1000px</b>:在 1920×1080 / 1440×900 下都留出呼吸空间,不做全屏铺满(为什么:登录是低频操作,窄卡更聚焦)。</li>
+      <li><b>配色为演示令牌</b>:整套演示稿统一「星云工作台」令牌,接入真实项目时替换 :root B 段(待确认)。</li>
+    </ol>
+  </div>
+
+  <!-- ⑪ 配色溯源 -->
+  <div class="footer">配色取自演示产品「星云工作台」令牌(<code>demo/admin-login-blueprint.html</code> 的 :root B 段;整套演示稿共用,接入真实项目时替换)。</div>
+</div>
+
+<script>
+(function () {
+  /* 四支柱:数据注册表 → render() 整体重绘 → 事件委托 → 重置 */
+  var el = function (id) { return document.getElementById(id); };
+
+  /* 状态:账户/密码/记住我 + 登录四态 */
+  var state = { account: '', password: '', remember: true, phase: 'idle' }; // idle|error|loading|success
+
+  function render() {
+    var acc = el('acc'), pwd = el('pwd'), remember = el('remember');
+    /* 输入框是受控的:值从状态回填 */
+    acc.value = state.account;
+    pwd.value = state.password;
+    remember.checked = state.remember;
+    el('loginBtn').disabled = state.phase === 'loading' || state.phase === 'success';
+    el('loginBtn').textContent =
+      state.phase === 'loading' ? '登录中…' :
+      state.phase === 'success' ? '已登录' : '登 录';
+    el('err').textContent = state.phase === 'error' ? '账户或密码不正确(演示)请检查后重试' : '';
+    el('suc').textContent = state.phase === 'success' ? '登录成功,欢迎回来,' + (state.account || '运营同学') + '!' : '';
+  }
+
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('#loginBtn');
+    if (btn && state.phase !== 'loading' && state.phase !== 'success') {
+      if (!state.account || !state.password) {
+        state.phase = 'error';
+        render();
+        return;
+      }
+      state.phase = 'loading';
+      render();
+      setTimeout(function () { state.phase = 'success'; render(); }, 800);
+      return;
+    }
+  });
+
+  /* 输入同步回状态(受控输入) */
+  el('acc').addEventListener('input', function (e) { state.account = e.target.value; if (state.phase === 'error') { state.phase = 'idle'; render(); } });
+  el('pwd').addEventListener('input', function (e) { state.password = e.target.value; if (state.phase === 'error') { state.phase = 'idle'; render(); } });
+  el('remember').addEventListener('change', function (e) { state.remember = e.target.checked; });
+
+  el('zonesToggle').addEventListener('change', function (e) {
+    document.body.classList.toggle('show-zones', e.target.checked);
+  });
+
+  el('reset').addEventListener('click', function () {
+    state = { account: '', password: '', remember: true, phase: 'idle' };
+    render();
+  });
+
+  render();
+})();
+</script>

@@ -62,10 +62,10 @@ git clone https://github.com/simple-code4ai/quick-design.git .claude/skills/quic
 | 文件 | 作用 |
 |------|------|
 | `SKILL.md` | skill 入口(触发词 + 5 步工作流 + 登记规则 + 自检) |
-| `DEFINITION.md` | 完整规格:12 部件结构 / 令牌铁律 / 固定骨架+动态区块 / 迭代规则 |
+| `DEFINITION.md` | 完整规格:11 部件结构 / 令牌铁律 / 固定骨架+动态区块 / 迭代规则 |
 | `template.html` | 起手模板(新蓝图从它复制,换令牌、替换示例界面) |
-| `index.html` | 蓝图索引页(左文件树 + 右预览,文件夹可折叠;头部「适配」下拉按屏幕尺寸预览;清单来自 `index.js`) |
-| `index.js` | 登记清单(`var BLUEPRINTS = [...]`,支持文件夹分组;另有 `ADAPT_PRESETS` 屏幕适配预设;内置一条默认示例,由 AI 生成后登记) |
+| `index.html` | 蓝图索引页(左文件树 + 右 iframe 预览,文件夹可折叠;清单来自 `index.js`) |
+| `index.js` | 登记清单(`var BLUEPRINTS = [...]`,支持文件夹分组;另有 `ADAPT_PRESETS` 常用画布尺寸参考(纯注册表,生成蓝图时填「画布 W×H」徽标);内置一条默认示例,由 AI 生成后登记) |
 
 ## 原则
 

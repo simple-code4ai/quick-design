@@ -1,0 +1,411 @@
+<title>可交互蓝图 · 后台端·设置 设计稿 · v1</title>
+
+<style>
+  /* ══════════════════════════════════════════════════════════
+     ① 令牌:两套
+       A. 蓝图外壳:设计稿页面自身的外观(本段基本不改,中性即可)
+       B. 产品示例:演示产品「星云工作台」后台端令牌(整套演示稿共用,
+          开工前替换成你项目的令牌;这里仅作演示,不是标准)
+     ══════════════════════════════════════════════════════════ */
+  :root {
+    /* A. 蓝图外壳 */
+    --bp-page: #1b1d20;
+    --bp-panel: #222529;
+    --bp-input: #2b2d30;
+    --bp-border: #33363b;
+    --bp-text: #a9b7c6;
+    --bp-text-2: #8b949e;
+    --bp-text-3: #6a737b;
+
+    /* B. 演示产品·后台端令牌(整套演示稿统一,勿单稿改动) */
+    --bg: #14161a;            /* app background */
+    --bg-surface: #1c1f24;    /* panel / sidebar */
+    --bg-hover: #262a31;      /* hover */
+    --border: #33373f;        /* divider */
+    --text: #e8eaee;          /* primary text */
+    --text-muted: #9aa3ad;    /* secondary text */
+    --text-dim: #6a737d;      /* dim text */
+    --accent: #4f7cff;        /* brand blue */
+    --accent-soft: #2a3d6b;
+    --accent-text: #b9cdff;
+    --danger: #e0534f;        /* danger */
+    --success: #3fae7a;       /* success */
+    --warning: #e0a53a;       /* warning */
+    --mono: ui-monospace, "Cascadia Mono", Consolas, "Courier New", monospace;
+    --sans: "Segoe UI", system-ui, -apple-system, "Microsoft YaHei", "PingFang SC", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bp-page); color: var(--bp-text); font-family: var(--sans); font-size: 14px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  .page { max-width: 1280px; margin: 0 auto; padding: 40px 24px 64px; }
+
+  /* 页头 */
+  .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-text); margin: 0 0 10px; }
+  h1 { font-size: 30px; font-weight: 650; color: #d8e0ea; margin: 0 0 10px; }
+  .lede { font-size: 14px; color: var(--bp-text-2); max-width: 900px; margin: 0 0 22px; }
+
+  /* 控件条 */
+  .controls { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 16px; font-size: 12.5px; color: var(--bp-text-2); }
+  .chip { display: flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--bp-border); border-radius: 999px; cursor: pointer; background: var(--bp-panel); color: var(--bp-text); user-select: none; }
+  .chip input { accent-color: var(--accent); }
+  .controls button { background: var(--bp-panel); color: var(--bp-text); border: 1px solid var(--bp-border); border-radius: 6px; padding: 4px 10px; font-family: var(--sans); font-size: 12.5px; cursor: pointer; }
+  .controls button:hover { background: var(--bp-input); }
+  .hint { flex: 1 1 100%; color: var(--bp-text-3); font-size: 12px; }
+
+  .mock-scroll { overflow-x: auto; padding-bottom: 6px; }
+
+  /* 分区标注 */
+  .zone-label {
+    position: absolute; top: 4px; left: 50%; transform: translateX(-50%);
+    font-size: 10px; letter-spacing: .05em; color: var(--accent-text);
+    background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 4px;
+    padding: 1px 7px; white-space: nowrap; z-index: 40;
+    opacity: 0; pointer-events: none; transition: opacity .15s ease;
+  }
+  .show-zones .zone-label { opacity: 1; }
+
+  /* 画布尺寸标注(标题旁徽标):页面渲染非 1:1,徽标给出真实画布宽高 */
+  .canvas-annot {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 500; vertical-align: middle;
+    color: var(--bp-text-2); background: var(--bp-panel);
+    border: 1px solid var(--bp-border); border-radius: 999px;
+    padding: 2px 10px; margin-left: 10px; white-space: nowrap;
+    letter-spacing: .02em;
+  }
+  .canvas-annot b { font-family: var(--mono); font-weight: 500; letter-spacing: .01em; color: var(--accent-text); }
+  .show-zones .canvas-annot { border-color: var(--accent); color: var(--accent-text); background: var(--accent-soft); }
+  /* 图例 + 决策 */
+  .legend { margin-top: 26px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 720px) { .legend { grid-template-columns: 1fr; } }
+  .card { background: var(--bp-panel); border: 1px solid var(--bp-border); border-radius: 8px; padding: 16px 18px; }
+  .card h3 { margin: 0 0 10px; font-size: 13px; color: var(--bp-text); display: flex; align-items: center; gap: 8px; }
+  .card h3 .dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+  .dot.fixed { background: var(--accent); }
+  .dot.dyn { background: var(--danger); }
+  .card ul { list-style: none; margin: 0; padding: 0; }
+  .card li { font-size: 12.5px; color: var(--bp-text-2); padding: 4px 0; display: flex; gap: 8px; }
+  .card li b { color: var(--bp-text); font-weight: 600; white-space: nowrap; }
+  .card li .d { color: var(--bp-text-3); font-size: 11.5px; margin-left: auto; white-space: nowrap; align-self: center; }
+  .card li code { font-family: var(--mono); font-size: 11px; background: var(--bp-input); border: 1px solid var(--bp-border); border-radius: 4px; padding: 0 5px; color: var(--accent-text); }
+  .notes { margin-top: 16px; }
+  .notes ol { margin: 0; padding-left: 20px; }
+  .notes li { font-size: 12.5px; color: var(--bp-text-2); padding: 3px 0; }
+  .notes li b { color: var(--bp-text); }
+  .footer { margin-top: 24px; font-size: 11.5px; color: var(--bp-text-3); }
+  .footer code { font-family: var(--mono); font-size: 11px; color: var(--accent-text); }
+
+  /* ══════════════════════════════════════════════════════════
+     ③ 产品样式:后台端·设置(设置控制台)
+       界面样式一律用 B 组产品令牌,不许写死色值。
+     ══════════════════════════════════════════════════════════ */
+  .surface {
+    width: 1000px; height: 600px;
+    background: var(--bg);
+    border: 1px solid var(--bp-border); border-radius: 8px;
+    position: relative; overflow: hidden;
+  }
+  /* 设置控制台:左侧设置导航 + 右侧表单区 */
+  .settings { display: flex; height: 100%; }
+  .settings-nav {
+    flex: 0 0 200px; background: var(--bg-surface); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; padding: 18px 12px; gap: 4px; position: relative;
+  }
+  .nav-title { font-size: 12px; color: var(--text-dim); letter-spacing: .06em; margin: 0 8px 10px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 8px; width: 100%;
+    background: transparent; border: 1px solid transparent; border-radius: 6px;
+    color: var(--text-muted); font-family: var(--sans); font-size: 13px;
+    padding: 8px 10px; cursor: pointer; text-align: left;
+  }
+  .nav-item:hover { background: var(--bg-hover); color: var(--text); }
+  .nav-item.is-active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-text); }
+  .n-ico { width: 16px; text-align: center; font-size: 12px; }
+  .settings-main {
+    flex: 1; display: flex; flex-direction: column; gap: 18px;
+    padding: 20px 28px 24px; position: relative;
+  }
+  .main-head { position: relative; display: flex; align-items: flex-start; justify-content: space-between; }
+  .main-head h3 { margin: 0; font-size: 16px; color: var(--text); }
+  .main-head .sub { font-size: 12px; color: var(--text-dim); margin-top: 3px; }
+  .btn-save {
+    background: var(--accent); color: var(--text); border: none; border-radius: 6px;
+    padding: 7px 18px; font-family: var(--sans); font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  .btn-save:hover { filter: brightness(1.12); }
+  .form { display: flex; flex-direction: column; gap: 18px; }
+  .field-row { display: flex; flex-direction: column; gap: 6px; }
+  .field-row label { font-size: 12px; color: var(--text-muted); }
+  .field-row input[type="text"], .field-row input[type="email"], .field-row input[type="password"] {
+    background: var(--bg-surface); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); font-family: var(--sans); font-size: 13px; padding: 8px 10px; outline: none;
+    max-width: 420px;
+  }
+  .field-row input:focus { border-color: var(--accent); }
+  .sec-title { font-size: 12px; color: var(--text-dim); letter-spacing: .06em; margin: 0; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .pwd-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .toggle-row:last-child { border-bottom: none; }
+  .t-label { font-size: 13px; color: var(--text); }
+  .t-desc { font-size: 11.5px; color: var(--text-dim); margin-top: 2px; }
+  .switch { position: relative; display: inline-block; width: 38px; height: 22px; flex: 0 0 auto; }
+  .switch input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; z-index: 2; }
+  .switch .track { position: absolute; inset: 0; background: var(--bg-hover); border: 1px solid var(--border); border-radius: 999px; transition: background .15s; }
+  .switch .knob { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--text-muted); transition: left .15s, background .15s; }
+  .switch input:checked ~ .track { background: var(--accent); border-color: var(--accent); }
+  .switch input:checked ~ .knob { left: 18px; background: var(--text); }
+  .theme-opts { display: flex; gap: 12px; }
+  .theme-opt { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-size: 13px; color: var(--text); }
+  .theme-opt:hover { border-color: var(--accent); }
+  .theme-opt input { accent-color: var(--accent); }
+  .theme-opt:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-text); }
+  .about-info { display: flex; flex-direction: column; gap: 10px; }
+  .about-info .logo {
+    width: 40px; height: 40px; border-radius: 10px; background: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 4px;
+  }
+  .about-info h4 { margin: 0; font-size: 16px; color: var(--text); }
+  .about-info p { margin: 0; font-size: 12.5px; color: var(--text-muted); max-width: 420px; line-height: 1.6; }
+  .about-rows { display: flex; flex-direction: column; gap: 8px; font-size: 12.5px; }
+  .a-row { display: flex; gap: 12px; color: var(--text-muted); }
+  .a-k { color: var(--text-dim); width: 72px; flex: 0 0 72px; }
+  .about-links { display: flex; gap: 14px; font-size: 12px; color: var(--accent-text); }
+  .about-links span { cursor: pointer; }
+  .toast {
+    position: absolute; right: 24px; bottom: 20px; z-index: 50;
+    display: flex; align-items: center; gap: 8px;
+    background: var(--success); color: var(--text);
+    font-size: 12.5px; padding: 9px 16px; border-radius: 6px;
+    animation: toastIn .2s ease;
+  }
+  @keyframes toastIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+
+<div class="page">
+  <!-- ④ 定版标识:产品 · 里程碑 · 蓝图 · 日期 · v版本 -->
+  <p class="eyebrow">演示集 · 后台端 · 蓝图 · 2026-08-08 · v1</p>
+  <!-- ⑤ 一句话论点 -->
+  <h1>后台端·设置:左侧设置导航 + 右侧表单区,一个面板管完账户、通知与外观<span class="canvas-annot" title="页面非 1:1 渲染,此徽标给出真实画布宽高">画布 <b>1920×1080</b></span></h1>
+  <!-- ⑥ 设计者立场 -->
+  <p class="lede">
+    设置是后台里最「散」的一页——子项多、改动频繁、但都不重。本稿把左侧设置导航做成固定骨架(200px),
+    右侧表单区由导航切换的四个动态区块组成;区块内的开关、主题、保存反馈都是真状态,
+    翻转与保存都经单一 render() 重绘,照搬实现时的注册表 + 受控渲染结构。
+  </p>
+
+  <!-- ⑦ 交互开关 + 操作引导 -->
+  <div class="controls">
+    <label class="chip"><input type="checkbox" id="zonesToggle"> 显示分区(骨架)</label>
+    <button id="reset">↺ 重置默认布局</button>
+    <span class="hint">点左侧导航切换表单区块;开关 / 主题直接翻转真实状态;点「保存」弹已保存 toast;点重置回到账户安全 + 默认值。</span>
+  </div>
+
+  <div class="mock-scroll">
+    <!-- ⑧ 界面本体:后台端·设置控制台 -->
+    <div class="surface" id="surface">
+      <div class="settings">
+        <div class="settings-nav">
+          <h4 class="nav-title">设置</h4>
+          <button class="nav-item is-active" data-section="account"><span class="n-ico">🔐</span> 账户安全</button>
+          <button class="nav-item" data-section="notify"><span class="n-ico">🔔</span> 通知偏好</button>
+          <button class="nav-item" data-section="appearance"><span class="n-ico">🎨</span> 外观</button>
+          <button class="nav-item" data-section="about"><span class="n-ico">ⓘ</span> 关于</button>
+          <span class="zone-label">设置导航 · 200px</span>
+        </div>
+        <div class="settings-main">
+          <div class="main-head">
+            <div>
+              <h3 id="secTitle">账户安全</h3>
+              <div class="sub" id="secSub">管理登录手机号、邮箱与密码</div>
+            </div>
+            <button class="btn-save" id="saveBtn">保存</button>
+            <span class="zone-label">顶栏 · 标题+保存</span>
+          </div>
+          <div id="formArea" style="position:relative;"></div>
+          <span class="zone-label">表单区 · flex:1</span>
+        </div>
+      </div>
+      <div class="toast" id="toast" hidden></div>
+      <span class="zone-label">Surface · 1000×600</span>
+    </div>
+  </div>
+
+  <!-- ⑨ 图例 -->
+  <div class="legend">
+    <div class="card">
+      <h3><span class="dot fixed"></span> 固定层 · 骨架(代码写死)</h3>
+      <ul>
+        <li><b>设置控制台</b><span class="d">1000×600</span></li>
+        <li><b>设置导航</b><span class="d">200px</span></li>
+        <li><b>顶栏 + 表单区容器</b><span class="d">flex:1</span></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3><span class="dot dyn"></span> 动态层 · 内容(状态/注册表加载)</h3>
+      <ul>
+        <li><b>四个设置区块</b> <code>account / notify / appearance / about</code></li>
+        <li><b>开关 / 主题单选</b><span class="d">on-off 状态</span></li>
+        <li><b>保存 toast</b><span class="d">提示反馈</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ⑩ 决策清单 -->
+  <div class="notes">
+    <h3 style="font-size:13px;color:var(--bp-text);margin:0 0 8px;">布局决策</h3>
+    <ol>
+      <li><b>左导航右表单</b>:设置页子项并列、改动频繁但不重,左侧 200px 固定导航做入口,右侧单区块表单按导航切换(为什么:设置项是树形并列关系,单栏切换比堆叠选项卡更不易迷失)。</li>
+      <li><b>区块切换走注册表</b>:导航点击只改 state.section,右侧表单区整体重绘,四个区块互不共享 DOM(为什么:区块各自独立、切换零残留,结构与实现代码一一对应)。</li>
+      <li><b>开关与主题是真状态</b>:state.toggles / state.theme 存数据注册表,翻转后经 render() 真实重绘,不做假按钮(为什么:设置必须所见即所得,假开关保存后会穿帮)。</li>
+      <li><b>保存 toast 经 render()</b>:点「保存」由 render() 弹「已保存」提示,2 秒后自消(为什么:设置页无跳转,轻提示即时反馈,不发全屏弹窗)。</li>
+      <li><b>配色为演示令牌</b>:整套演示稿统一「星云工作台」令牌,接入真实项目时替换 :root B 段(待确认)。</li>
+    </ol>
+  </div>
+
+  <!-- ⑪ 配色溯源 -->
+  <div class="footer">配色取自演示产品「星云工作台」令牌(<code>demo/admin-settings-blueprint.html</code> 的 :root B 段;整套演示稿共用,接入真实项目时替换)。</div>
+</div>
+
+<script>
+(function () {
+  /* 四支柱:数据注册表 → render() 整体重绘 → 事件委托 → 重置 */
+  var el = function (id) { return document.getElementById(id); };
+
+  /* 状态:当前区块 + 各区块字段 + 保存 toast */
+  var state = {
+    section: 'account',
+    phone: '138 0000 4567',
+    email: 'ops@nebula.work',
+    toggles: { order: true, stock: true, daily: true },
+    theme: 'dark',
+    toast: null
+  };
+  var toastTimer = null;
+
+  /* 区块注册表:标题 + 副标题 + 各自 build 出表单 HTML(状态驱动) */
+  function toggleRow(key, label, desc, s) {
+    return '<div class="toggle-row"><div><div class="t-label">' + label + '</div>' +
+      '<div class="t-desc">' + desc + '</div></div>' +
+      '<label class="switch"><input type="checkbox" class="tog" data-key="' + key + '"' + (s.toggles[key] ? ' checked' : '') + '>' +
+      '<span class="track"></span><span class="knob"></span></label></div>';
+  }
+  function themeOpt(val, label, s) {
+    return '<label class="theme-opt"><input type="radio" name="theme" class="theme" value="' + val + '"' +
+      (s.theme === val ? ' checked' : '') + '>' + label + '</label>';
+  }
+
+  var SECTIONS = {
+    account: {
+      title: '账户安全', sub: '管理登录手机号、邮箱与密码',
+      build: function (s) {
+        return '<div class="form">' +
+          '<div class="field-row"><label for="ph">手机号</label>' +
+          '<input type="text" id="ph" value="' + s.phone + '" data-bind="phone" autocomplete="off"></div>' +
+          '<div class="field-row"><label for="em">邮箱</label>' +
+          '<input type="email" id="em" value="' + s.email + '" data-bind="email" autocomplete="off"></div>' +
+          '<p class="sec-title">修改密码</p>' +
+          '<div class="pwd-grid">' +
+          '<div class="field-row"><label>当前密码</label><input type="password" placeholder="••••••••"></div>' +
+          '<div class="field-row"><label>新密码</label><input type="password" placeholder="至少 8 位"></div>' +
+          '<div class="field-row"><label>确认新密码</label><input type="password" placeholder="再次输入"></div>' +
+          '</div></div>';
+      }
+    },
+    notify: {
+      title: '通知偏好', sub: '选择需要接收的站内与邮件提醒',
+      build: function (s) {
+        return '<div class="form">' +
+          toggleRow('order', '订单提醒', '新订单、付款成功、退款申请时通知我', s) +
+          toggleRow('stock', '库存预警', '商品库存低于安全水位时通知我', s) +
+          toggleRow('daily', '日报邮件', '每个工作日上午 9 点发送经营日报', s) +
+          '</div>';
+      }
+    },
+    appearance: {
+      title: '外观', sub: '选择工作台的主题配色',
+      build: function (s) {
+        return '<div class="form"><div class="field-row"><label>主题</label>' +
+          '<div class="theme-opts">' +
+          themeOpt('light', '浅色', s) +
+          themeOpt('dark', '深色', s) +
+          '</div></div></div>';
+      }
+    },
+    about: {
+      title: '关于', sub: '版本信息与反馈渠道',
+      build: function () {
+        return '<div class="form"><div class="about-info">' +
+          '<div class="logo">星</div>' +
+          '<h4>星云工作台</h4>' +
+          '<p>运营、商品、订单、数据分析,一个后台管完。当前版本 4.2.0(Build 20260808)。</p>' +
+          '<div class="about-rows">' +
+          '<div class="a-row"><span class="a-k">产品版本</span>v4.2.0</div>' +
+          '<div class="a-row"><span class="a-k">数据版本</span>2026-08-08</div>' +
+          '<div class="a-row"><span class="a-k">服务状态</span><span style="color:var(--success)">运行正常</span></div>' +
+          '</div>' +
+          '<div class="about-links"><span>更新日志</span><span>开源许可</span><span>帮助中心</span></div>' +
+          '</div></div>';
+      }
+    }
+  };
+
+  /* 单一 render():重绘导航态 + 表单区 + toast */
+  function render() {
+    var navs = document.querySelectorAll('.nav-item');
+    for (var i = 0; i < navs.length; i++) {
+      navs[i].classList.toggle('is-active', navs[i].getAttribute('data-section') === state.section);
+    }
+    var sec = SECTIONS[state.section];
+    el('secTitle').textContent = sec.title;
+    el('secSub').textContent = sec.sub;
+    el('formArea').innerHTML = sec.build(state);
+    var toast = el('toast');
+    if (state.toast) { toast.hidden = false; toast.textContent = state.toast; }
+    else { toast.hidden = true; }
+  }
+
+  /* 事件委托:导航切换 + 保存按钮 */
+  document.addEventListener('click', function (e) {
+    var nav = e.target.closest('.nav-item');
+    if (nav) {
+      state.section = nav.getAttribute('data-section');
+      state.toast = null;
+      render();
+      return;
+    }
+    var save = e.target.closest('#saveBtn');
+    if (save) {
+      state.toast = '已保存';
+      render();
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () { state.toast = null; render(); }, 2000);
+      return;
+    }
+  });
+
+  /* 事件委托:开关 / 主题单选 / 受控输入,变更即回写状态 */
+  document.addEventListener('change', function (e) {
+    var tog = e.target.closest('.tog');
+    if (tog) { state.toggles[tog.getAttribute('data-key')] = tog.checked; state.toast = null; render(); return; }
+    var theme = e.target.closest('.theme');
+    if (theme) { state.theme = theme.value; state.toast = null; render(); return; }
+    var bind = e.target.closest('[data-bind]');
+    if (bind) { state[bind.getAttribute('data-bind')] = bind.value; }
+  });
+
+  el('zonesToggle').addEventListener('change', function (e) {
+    document.body.classList.toggle('show-zones', e.target.checked);
+  });
+
+  el('reset').addEventListener('click', function () {
+    clearTimeout(toastTimer);
+    state = {
+      section: 'account', phone: '138 0000 4567', email: 'ops@nebula.work',
+      toggles: { order: true, stock: true, daily: true }, theme: 'dark', toast: null
+    };
+    render();
+  });
+
+  render();
+})();
+</script>

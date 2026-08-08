@@ -1,0 +1,468 @@
+<title>可交互蓝图 · 手机端·商品详情 设计稿 · v1</title>
+
+<style>
+  /* ══════════════════════════════════════════════════════════
+     ① 令牌:两套
+       A. 蓝图外壳:设计稿页面自身的外观(本段基本不改,中性即可)
+       B. 产品示例:演示产品「星云商城」手机端令牌(整套演示稿共用,
+          开工前替换成你项目的令牌;这里仅作演示,不是标准)
+     ══════════════════════════════════════════════════════════ */
+  :root {
+    /* A. 蓝图外壳 */
+    --bp-page: #1b1d20;
+    --bp-panel: #222529;
+    --bp-input: #2b2d30;
+    --bp-border: #33363b;
+    --bp-text: #a9b7c6;
+    --bp-text-2: #8b949e;
+    --bp-text-3: #6a737b;
+    --mono: ui-monospace, "Cascadia Mono", Consolas, "Courier New", monospace;
+    --sans: "Segoe UI", system-ui, -apple-system, "Microsoft YaHei", "PingFang SC", sans-serif;
+
+    /* B. 演示产品·手机端令牌(整套演示稿统一,勿单稿改动) */
+    /* demo product · mobile tokens (light theme; copy verbatim into :root section B) */
+    --bg: #f4f6f8;            /* app background */
+    --bg-surface: #ffffff;    /* card / sheet */
+    --bg-hover: #eef1f4;      /* hover */
+    --border: #e3e7eb;        /* divider */
+    --text: #1b1e24;          /* primary text */
+    --text-muted: #6b7380;    /* secondary text */
+    --text-dim: #9aa3ad;      /* dim text */
+    --accent: #4f7cff;        /* brand blue */
+    --accent-soft: #e8eeff;
+    --accent-text: #2f5ce0;
+    --danger: #e0534f;        /* danger */
+    --success: #3fae7a;       /* success */
+    --warning: #e0a53a;       /* warning */
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bp-page); color: var(--bp-text); font-family: var(--sans); font-size: 14px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  .page { max-width: 1280px; margin: 0 auto; padding: 40px 24px 64px; }
+
+  /* 页头 */
+  .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-text); margin: 0 0 10px; }
+  h1 { font-size: 30px; font-weight: 650; color: #d8e0ea; margin: 0 0 10px; }
+  .lede { font-size: 14px; color: var(--bp-text-2); max-width: 900px; margin: 0 0 22px; }
+
+  /* 控件条 */
+  .controls { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 16px; font-size: 12.5px; color: var(--bp-text-2); }
+  .chip { display: flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--bp-border); border-radius: 999px; cursor: pointer; background: var(--bp-panel); color: var(--bp-text); user-select: none; }
+  .chip input { accent-color: var(--accent); }
+  .controls button { background: var(--bp-panel); color: var(--bp-text); border: 1px solid var(--bp-border); border-radius: 6px; padding: 4px 10px; font-family: var(--sans); font-size: 12.5px; cursor: pointer; }
+  .controls button:hover { background: var(--bp-input); }
+  .hint { flex: 1 1 100%; color: var(--bp-text-3); font-size: 12px; }
+
+  .mock-scroll { overflow-x: auto; padding-bottom: 6px; }
+
+  /* 分区标注 */
+  .zone-label {
+    position: absolute; top: 4px; left: 50%; transform: translateX(-50%);
+    font-size: 10px; letter-spacing: .05em; color: var(--accent-text);
+    background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 4px;
+    padding: 1px 7px; white-space: nowrap; z-index: 40;
+    opacity: 0; pointer-events: none; transition: opacity .15s ease;
+  }
+  .show-zones .zone-label { opacity: 1; }
+
+  /* 画布尺寸标注(标题旁徽标):页面渲染非 1:1,徽标给出真实画布宽高 */
+  .canvas-annot {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 500; vertical-align: middle;
+    color: var(--bp-text-2); background: var(--bp-panel);
+    border: 1px solid var(--bp-border); border-radius: 999px;
+    padding: 2px 10px; margin-left: 10px; white-space: nowrap;
+    letter-spacing: .02em;
+  }
+  .canvas-annot b { font-family: var(--mono); font-weight: 500; letter-spacing: .01em; color: var(--accent-text); }
+  .show-zones .canvas-annot { border-color: var(--accent); color: var(--accent-text); background: var(--accent-soft); }
+  /* 图例 + 决策 */
+  .legend { margin-top: 26px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 720px) { .legend { grid-template-columns: 1fr; } }
+  .card { background: var(--bp-panel); border: 1px solid var(--bp-border); border-radius: 8px; padding: 16px 18px; }
+  .card h3 { margin: 0 0 10px; font-size: 13px; color: var(--bp-text); display: flex; align-items: center; gap: 8px; }
+  .card h3 .dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+  .dot.fixed { background: var(--accent); }
+  .dot.dyn { background: var(--danger); }
+  .card ul { list-style: none; margin: 0; padding: 0; }
+  .card li { font-size: 12.5px; color: var(--bp-text-2); padding: 4px 0; display: flex; gap: 8px; }
+  .card li b { color: var(--bp-text); font-weight: 600; white-space: nowrap; }
+  .card li .d { color: var(--bp-text-3); font-size: 11.5px; margin-left: auto; white-space: nowrap; align-self: center; }
+  .card li code { font-family: var(--mono); font-size: 11px; background: var(--bp-input); border: 1px solid var(--bp-border); border-radius: 4px; padding: 0 5px; color: var(--accent-text); }
+  .notes { margin-top: 16px; }
+  .notes ol { margin: 0; padding-left: 20px; }
+  .notes li { font-size: 12.5px; color: var(--bp-text-2); padding: 3px 0; }
+  .notes li b { color: var(--bp-text); }
+  .footer { margin-top: 24px; font-size: 11.5px; color: var(--bp-text-3); }
+  .footer code { font-family: var(--mono); font-size: 11px; color: var(--accent-text); }
+
+  /* ══════════════════════════════════════════════════════════
+     ③ 产品样式:手机端·商品详情(星云商城 · 390×780 手机壳,浅色)
+       界面样式一律用 B 组产品令牌,不许写死色值。
+     ══════════════════════════════════════════════════════════ */
+  .surface {
+    width: 620px; height: 810px; margin: 0 auto;
+    background: var(--bg);
+    border: 1px solid var(--bp-border); border-radius: 8px;
+    position: relative; overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .phone {
+    width: 390px; height: 780px; border-radius: 40px;
+    background: var(--bg-surface); border: 1px solid var(--border);
+    overflow: hidden; display: flex; flex-direction: column; position: relative;
+  }
+  /* 分区标签微调:信息区等左侧贴边的标签 */
+  .zone-label.zl-l { left: 8px; transform: none; }
+
+  /* 头部 */
+  .ph-head {
+    flex: 0 0 44px; display: flex; align-items: center; gap: 10px;
+    padding: 0 14px; background: var(--bg-surface);
+    border-bottom: 1px solid var(--border); position: relative;
+  }
+  .ph-back { font-size: 24px; line-height: 1; color: var(--text); width: 22px; }
+  .ph-title { flex: 1; text-align: center; font-size: 15px; font-weight: 600; color: var(--text); margin-right: 20px; }
+  .ph-cart { position: relative; font-size: 18px; color: var(--text); line-height: 1; }
+  .ph-badge {
+    position: absolute; top: -6px; right: -8px; min-width: 15px; height: 15px; padding: 0 3px;
+    border-radius: 8px; background: var(--danger); color: var(--bg-surface);
+    font-size: 10px; font-style: normal; line-height: 15px; text-align: center;
+  }
+
+  /* 图库 */
+  .gallery { flex: 0 0 330px; position: relative; background: var(--bg-surface); }
+  .gallery-main {
+    width: 390px; height: 300px; position: relative;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .gallery-main.tone-0 { background: linear-gradient(150deg, var(--accent-soft) 0%, var(--bg-surface) 72%); }
+  .gallery-main.tone-1 { background: linear-gradient(200deg, var(--bg-hover) 0%, var(--bg-surface) 62%); }
+  .gallery-main.tone-2 { background: linear-gradient(160deg, var(--accent-soft) 0%, var(--bg-hover) 90%); }
+  .gallery-emoji { font-size: 84px; }
+  .gallery-angle {
+    position: absolute; top: 12px; left: 12px; font-size: 11px;
+    color: var(--accent-text); background: var(--bg-surface);
+    border: 1px solid var(--accent); border-radius: 999px; padding: 2px 10px;
+  }
+  .gallery-dots { display: flex; gap: 8px; justify-content: center; padding-top: 13px; }
+  .gdot {
+    width: 8px; height: 8px; border-radius: 4px; border: none; padding: 0;
+    background: var(--border); cursor: pointer; transition: width .15s ease, background .15s ease;
+  }
+  .gdot.is-on { background: var(--accent); width: 20px; }
+
+  /* 信息区 */
+  .info { flex: 1; overflow-y: auto; padding: 14px 16px 12px; position: relative; background: var(--bg-surface); }
+  .info-title { font-size: 16px; font-weight: 600; color: var(--text); line-height: 1.45; }
+  .info-tags { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .tag-flag { font-size: 10px; color: var(--accent-text); background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 4px; padding: 1px 6px; }
+  .tag-sold { font-size: 10px; color: var(--text-muted); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; }
+  .price-row { display: flex; align-items: baseline; gap: 8px; margin-top: 10px; }
+  .price { color: var(--danger); font-size: 22px; font-weight: 700; line-height: 1; }
+  .price i { font-style: normal; font-size: 13px; margin-right: 1px; }
+  .price-old { color: var(--text-dim); font-size: 12px; text-decoration: line-through; }
+  .price-vip { font-size: 11px; color: var(--warning); border: 1px solid var(--warning); border-radius: 999px; padding: 1px 8px; }
+
+  .shop {
+    display: flex; align-items: center; gap: 10px; margin-top: 14px;
+    padding: 10px 12px; background: var(--bg); border-radius: 8px;
+  }
+  .shop-logo { width: 28px; height: 28px; border-radius: 8px; background: var(--accent); color: var(--bg-surface); font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .shop-name { flex: 1; font-size: 13px; font-weight: 600; color: var(--text); }
+  .shop-go { font-size: 11px; color: var(--text-muted); }
+
+  /* 规格 */
+  .spec { margin-top: 14px; }
+  .spec-head { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+  .spec-head b { color: var(--text); font-weight: 600; }
+  .spec-pick { color: var(--accent-text); margin-left: 6px; }
+  .spec-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .spec-chip {
+    padding: 7px 16px; font-size: 12.5px; color: var(--text);
+    background: var(--bg-surface); border: 1px solid var(--border); border-radius: 6px;
+    font-family: var(--sans); cursor: pointer;
+  }
+  .spec-chip.is-on { border-color: var(--accent); color: var(--accent-text); background: var(--accent-soft); }
+  .spec-chip.is-out { color: var(--text-dim); background: var(--bg-hover); text-decoration: line-through; cursor: not-allowed; }
+  .spec-chip:disabled { cursor: not-allowed; }
+
+  /* 数量 */
+  .qty { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; }
+  .qty b { font-size: 12px; color: var(--text); font-weight: 600; }
+  .qty-box { display: flex; align-items: center; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .qty-step {
+    width: 30px; height: 30px; border: none; background: var(--bg-surface); color: var(--text);
+    font-size: 16px; font-family: var(--sans); cursor: pointer;
+  }
+  .qty-step:disabled { color: var(--text-dim); cursor: default; }
+  .qty-num { width: 40px; text-align: center; font-size: 13px; color: var(--text); }
+
+  /* 底栏 */
+  .actionbar {
+    flex: 0 0 56px; display: flex; align-items: center; gap: 4px;
+    padding: 0 8px; background: var(--bg-surface); border-top: 1px solid var(--border); position: relative;
+  }
+  .act-item {
+    width: 48px; height: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    background: none; border: none; cursor: pointer; font-family: var(--sans); color: var(--text-muted);
+  }
+  .act-ico { font-size: 17px; line-height: 1; }
+  .act-label { font-size: 9.5px; }
+  .fav-btn.is-on { color: var(--danger); }
+  .cta {
+    flex: 1; height: 40px; border: none; border-radius: 20px;
+    font-size: 13px; font-weight: 600; font-family: var(--sans); cursor: pointer;
+  }
+  .cta-cart { background: var(--accent-soft); color: var(--accent-text); }
+  .cta-buy { background: var(--accent); color: var(--bg-surface); }
+
+  /* toast */
+  .toast {
+    position: absolute; left: 50%; bottom: 68px; transform: translate(-50%, 8px);
+    background: var(--text); color: var(--bg-surface); font-size: 12px;
+    border-radius: 8px; padding: 8px 16px; white-space: nowrap;
+    opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease; z-index: 30;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+</style>
+
+<div class="page">
+  <!-- ④ 定版标识:产品 · 里程碑 · 蓝图 · 日期 · v版本 -->
+  <p class="eyebrow">演示集 · 手机端 · 蓝图 · 2026-08-08 · v1</p>
+  <!-- ⑤ 一句话论点 -->
+  <h1>手机端·商品详情:图库 + 规格 + 数量 + 双 CTA,下单前的最后一屏决策全部可点<span class="canvas-annot" title="页面非 1:1 渲染,此徽标给出真实画布宽高">画布 <b>390×844</b></span></h1>
+  <!-- ⑥ 设计者立场 -->
+  <p class="lede">
+    商品详情是下单前最后一道确认:信息要全、决策要快。本稿把手机端拆成头部 / 图库 / 信息 / 底栏四段固定骨架,
+    图库、规格、数量、收藏、加购、下单全部是可点状态;整套演示稿用它定下「星云商城」
+    手机端 390×844 画布标注。
+  </p>
+
+  <!-- ⑦ 交互开关 + 操作引导 -->
+  <div class="controls">
+    <label class="chip"><input type="checkbox" id="zonesToggle"> 显示分区(骨架)</label>
+    <button id="reset">↺ 重置默认布局</button>
+    <span class="hint">点缩略图切大图 → 选颜色 / 尺码(41 缺货禁用)→ 步进器改数量 → 点「客服 / 收藏 / 加入购物车 / 立即购买」看反馈;点重置回默认。</span>
+  </div>
+
+  <div class="mock-scroll">
+    <!-- ⑧ 界面本体:手机端·商品详情 -->
+    <div class="surface">
+      <div class="phone" id="phone">
+        <span class="zone-label">Phone · 390×780</span>
+
+        <header class="ph-head">
+          <span class="ph-back">‹</span>
+          <span class="ph-title">商品详情</span>
+          <span class="ph-cart">🛒<i class="ph-badge" id="cartBadge" style="display:none">0</i></span>
+          <span class="zone-label zl-l">Header · 390×44</span>
+        </header>
+
+        <div class="gallery">
+          <div class="gallery-main tone-0" id="galleryMain">
+            <span class="gallery-angle" id="galleryAngle">正面视角</span>
+            <span class="gallery-emoji">👟</span>
+          </div>
+          <div class="gallery-dots" id="galleryDots">
+            <button class="gdot is-on" data-img="0" type="button"></button>
+            <button class="gdot" data-img="1" type="button"></button>
+            <button class="gdot" data-img="2" type="button"></button>
+          </div>
+          <span class="zone-label">Gallery · 390×330</span>
+        </div>
+
+        <div class="info">
+          <div class="info-title">星云轻跑鞋 · 气垫减震男款 透气网面</div>
+          <div class="info-tags"><span class="tag-flag">星云自营</span><span class="tag-sold">已售 1.2万+</span><span class="tag-sold">好评 98%</span></div>
+          <div class="price-row">
+            <span class="price"><i>¥</i><b>299</b></span>
+            <span class="price-old">¥399</span>
+            <span class="price-vip">会员再减 ¥20</span>
+          </div>
+          <div class="shop">
+            <span class="shop-logo">星</span>
+            <span class="shop-name">星云商城旗舰店</span>
+            <span class="shop-go">进店 ›</span>
+          </div>
+
+          <div class="spec">
+            <div class="spec-head"><b>颜色</b><span class="spec-pick" id="colorName">曜石黑</span></div>
+            <div class="spec-chips" id="colorChips">
+              <button class="spec-chip" data-color="0" type="button">曜石黑</button>
+              <button class="spec-chip" data-color="1" type="button">云雾白</button>
+              <button class="spec-chip" data-color="2" type="button">落日橙</button>
+            </div>
+          </div>
+
+          <div class="spec">
+            <div class="spec-head"><b>尺码</b><span class="spec-pick" id="sizeName">40 码</span></div>
+            <div class="spec-chips" id="sizeChips">
+              <button class="spec-chip" data-size="0" type="button">39</button>
+              <button class="spec-chip" data-size="1" type="button">40</button>
+              <button class="spec-chip is-out" data-size="2" type="button" disabled>41 · 缺货</button>
+              <button class="spec-chip" data-size="3" type="button">42</button>
+            </div>
+          </div>
+
+          <div class="qty">
+            <b>数量</b>
+            <div class="qty-box">
+              <button class="qty-step qty-minus" id="qtyMinus" type="button">−</button>
+              <span class="qty-num" id="qtyNum">1</span>
+              <button class="qty-step qty-plus" id="qtyPlus" type="button">+</button>
+            </div>
+          </div>
+          <span class="zone-label">Info · 390×flex</span>
+        </div>
+
+        <div class="actionbar">
+          <button class="act-item act-service" type="button"><span class="act-ico">☎</span><span class="act-label">客服</span></button>
+          <button class="act-item fav-btn" id="favBtn" type="button"><span class="act-ico" id="favIco">♡</span><span class="act-label">收藏</span></button>
+          <button class="cta cta-cart" id="ctaCart" type="button">加入购物车</button>
+          <button class="cta cta-buy" id="ctaBuy" type="button">立即购买</button>
+          <span class="zone-label">ActionBar · 390×56</span>
+        </div>
+
+        <div class="toast" id="toast"></div>
+      </div>
+      <span class="zone-label">Surface · 620×810</span>
+    </div>
+  </div>
+
+  <!-- ⑨ 图例 -->
+  <div class="legend">
+    <div class="card">
+      <h3><span class="dot fixed"></span> 固定层 · 骨架(代码写死)</h3>
+      <ul>
+        <li><b>手机壳</b><span class="d">390×780</span></li>
+        <li><b>头部</b><span class="d">390×44</span></li>
+        <li><b>图库</b><span class="d">390×330</span></li>
+        <li><b>信息区</b><span class="d">390×flex</span></li>
+        <li><b>底栏</b><span class="d">390×56</span></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3><span class="dot dyn"></span> 动态层 · 内容(状态/注册表加载)</h3>
+      <ul>
+        <li><b>缩略图 / 颜色 / 尺码</b><span class="d">点选高亮</span></li>
+        <li><b>数量步进</b><span class="d">1–9 上限下限</span></li>
+        <li><b>收藏 / 加购 / 下单</b><span class="d">toast 反馈</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ⑩ 决策清单 -->
+  <div class="notes">
+    <h3 style="font-size:13px;color:var(--bp-text);margin:0 0 8px;">布局决策</h3>
+    <ol>
+      <li><b>手机壳 390×780 固定比例</b>:头部 / 图库 / 信息 / 底栏四段纵向堆叠,信息区独立滚动(为什么:主图必须稳住,滚动只发生在信息区,双 CTA 永不滚出视口)。</li>
+      <li><b>规格点选高亮 + 缺货禁用</b>:颜色三选一、尺码四选一(41 缺货置灰划线不可点),选中态经 render() 重绘(为什么:规格是下单前最高频操作,点选比下拉更快、误触成本更低)。</li>
+      <li><b>数量步进带上下限</b>:1–9 之外按钮禁用,加购后头部角标 +1(为什么:数量是订单最后一项,限制范围避免误操作,角标让「已加购」可见)。</li>
+      <li><b>底栏双 CTA + 即时反馈</b>:客服 / 收藏走「轻」,加购 / 立即购买走「重」,收藏红心切换、加购与下单弹 toast(为什么:详情页转化靠双 CTA 视觉权重与即时反馈降低下单焦虑)。</li>
+      <li><b>配色为演示令牌</b>:整套演示稿统一「星云商城」移动端令牌,接入真实项目时替换 :root B 段(待确认)。</li>
+    </ol>
+  </div>
+
+  <!-- ⑪ 配色溯源 -->
+  <div class="footer">配色取自演示产品「星云商城」令牌(<code>demo/mobile-detail-blueprint.html</code> 的 :root B 段;整套演示稿共用,接入真实项目时替换)。</div>
+</div>
+
+<script>
+(function () {
+  /* 四支柱:数据注册表 → render() 整体重绘 → 事件委托 → 重置 */
+  var el = function (id) { return document.getElementById(id); };
+
+  /* 数据注册表:图库 / 规格 / 数量 / 收藏 / 角标 / toast */
+  var GALLERY = [ { angle: '正面视角' }, { angle: '侧腰视角' }, { angle: '鞋底视角' } ];
+  var COLORS = ['曜石黑', '云雾白', '落日橙'];
+  var SIZES = [ { label: '39' }, { label: '40' }, { label: '41', out: true }, { label: '42' } ];
+  var PRICE = 299;
+
+  var state = { image: 0, color: 0, size: 1, qty: 1, fav: false, cartN: 0, toast: '' };
+
+  var toastTimer = null;
+  function showToast() {
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { state.toast = ''; render(); }, 2200);
+  }
+
+  function render() {
+    var i, k;
+
+    /* 图库:大图色调 + 视角角标 + 缩略点 */
+    el('galleryMain').className = 'gallery-main tone-' + state.image;
+    el('galleryAngle').textContent = GALLERY[state.image].angle;
+    var dots = el('galleryDots').children;
+    for (i = 0; i < dots.length; i++) dots[i].classList.toggle('is-on', i === state.image);
+
+    /* 颜色 */
+    var colors = el('colorChips').children;
+    for (k = 0; k < colors.length; k++) colors[k].classList.toggle('is-on', k === state.color);
+    el('colorName').textContent = COLORS[state.color];
+
+    /* 尺码 */
+    var sizes = el('sizeChips').children;
+    for (k = 0; k < sizes.length; k++) sizes[k].classList.toggle('is-on', k === state.size);
+    el('sizeName').textContent = (state.size === null ? '请选择' : SIZES[state.size].label) + ' 码';
+
+    /* 数量 */
+    el('qtyNum').textContent = state.qty;
+    el('qtyMinus').disabled = state.qty <= 1;
+    el('qtyPlus').disabled = state.qty >= 9;
+
+    /* 收藏 */
+    el('favBtn').classList.toggle('is-on', state.fav);
+    el('favIco').textContent = state.fav ? '♥' : '♡';
+
+    /* 购物车角标 */
+    el('cartBadge').textContent = state.cartN;
+    el('cartBadge').style.display = state.cartN > 0 ? 'block' : 'none';
+
+    /* toast */
+    el('toast').textContent = state.toast;
+    el('toast').classList.toggle('show', !!state.toast);
+  }
+
+  document.addEventListener('click', function (e) {
+    var t = e.target;
+
+    var img = t.closest('.gdot');
+    if (img) { state.image = +img.getAttribute('data-img'); render(); return; }
+
+    var c = t.closest('.spec-chip[data-color]');
+    if (c) { state.color = +c.getAttribute('data-color'); render(); return; }
+
+    var s = t.closest('.spec-chip[data-size]');
+    if (s && !s.classList.contains('is-out')) { state.size = +s.getAttribute('data-size'); render(); return; }
+
+    if (t.closest('.qty-minus')) { if (state.qty > 1) state.qty--; render(); return; }
+    if (t.closest('.qty-plus')) { if (state.qty < 9) state.qty++; render(); return; }
+
+    if (t.closest('.fav-btn')) { state.fav = !state.fav; render(); return; }
+
+    if (t.closest('.act-service')) { state.toast = '客服会话已发起(演示)'; render(); showToast(); return; }
+
+    if (t.closest('.cta-cart')) {
+      state.cartN++;
+      state.toast = '已加入购物车:' + COLORS[state.color] + ' ' + SIZES[state.size].label + '码 ×' + state.qty;
+      render(); showToast(); return;
+    }
+
+    if (t.closest('.cta-buy')) {
+      state.toast = '确认购买:' + COLORS[state.color] + ' ' + SIZES[state.size].label + '码 ×' + state.qty + ',合计 ¥' + (PRICE * state.qty);
+      render(); showToast(); return;
+    }
+  });
+
+  el('zonesToggle').addEventListener('change', function (e) {
+    document.body.classList.toggle('show-zones', e.target.checked);
+  });
+
+  el('reset').addEventListener('click', function () {
+    state = { image: 0, color: 0, size: 1, qty: 1, fav: false, cartN: 0, toast: '' };
+    render();
+  });
+
+  render();
+})();
+</script>

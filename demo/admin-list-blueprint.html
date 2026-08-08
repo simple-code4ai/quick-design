@@ -1,0 +1,537 @@
+<title>可交互蓝图 · 后台端·数据列表 设计稿 · v1</title>
+
+<style>
+  /* ══════════════════════════════════════════════════════════
+     ① 令牌:两套
+       A. 蓝图外壳:设计稿页面自身的外观(本段基本不改,中性即可)
+       B. 产品示例:演示产品「星云工作台」后台端令牌(整套演示稿共用,
+          开工前替换成你项目的令牌;这里仅作演示,不是标准)
+     ══════════════════════════════════════════════════════════ */
+  :root {
+    /* A. 蓝图外壳 */
+    --bp-page: #1b1d20;
+    --bp-panel: #222529;
+    --bp-input: #2b2d30;
+    --bp-border: #33363b;
+    --bp-text: #a9b7c6;
+    --bp-text-2: #8b949e;
+    --bp-text-3: #6a737b;
+    /* 字体栈:外壳与产品样式共用(演示集统一,保持在 A 段) */
+    --mono: ui-monospace, "Cascadia Mono", Consolas, "Courier New", monospace;
+    --sans: "Segoe UI", system-ui, -apple-system, "Microsoft YaHei", "PingFang SC", sans-serif;
+
+    /* B. 演示产品·后台端令牌(整套演示稿统一,勿单稿改动) */
+    /* demo product · admin tokens (copy verbatim into :root section B) */
+    --bg: #14161a;            /* app background */
+    --bg-surface: #1c1f24;    /* panel / sidebar */
+    --bg-hover: #262a31;      /* hover */
+    --border: #33373f;        /* divider */
+    --text: #e8eaee;          /* primary text */
+    --text-muted: #9aa3ad;    /* secondary text */
+    --text-dim: #6a737d;      /* dim text */
+    --accent: #4f7cff;        /* brand blue */
+    --accent-soft: #2a3d6b;
+    --accent-text: #b9cdff;
+    --danger: #e0534f;        /* danger */
+    --success: #3fae7a;       /* success */
+    --warning: #e0a53a;       /* warning */
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bp-page); color: var(--bp-text); font-family: var(--sans); font-size: 14px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  .page { max-width: 1280px; margin: 0 auto; padding: 40px 24px 64px; }
+
+  /* 页头 */
+  .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-text); margin: 0 0 10px; }
+  h1 { font-size: 30px; font-weight: 650; color: #d8e0ea; margin: 0 0 10px; }
+  .lede { font-size: 14px; color: var(--bp-text-2); max-width: 900px; margin: 0 0 22px; }
+
+  /* 控件条 */
+  .controls { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 16px; font-size: 12.5px; color: var(--bp-text-2); }
+  .chip { display: flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--bp-border); border-radius: 999px; cursor: pointer; background: var(--bp-panel); color: var(--bp-text); user-select: none; }
+  .chip input { accent-color: var(--accent); }
+  .controls button { background: var(--bp-panel); color: var(--bp-text); border: 1px solid var(--bp-border); border-radius: 6px; padding: 4px 10px; font-family: var(--sans); font-size: 12.5px; cursor: pointer; }
+  .controls button:hover { background: var(--bp-input); }
+  .hint { flex: 1 1 100%; color: var(--bp-text-3); font-size: 12px; }
+
+  .mock-scroll { overflow-x: auto; padding-bottom: 6px; }
+
+  /* 分区标注 */
+  .zone-label {
+    position: absolute; top: 4px; left: 50%; transform: translateX(-50%);
+    font-size: 10px; letter-spacing: .05em; color: var(--accent-text);
+    background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 4px;
+    padding: 1px 7px; white-space: nowrap; z-index: 40;
+    opacity: 0; pointer-events: none; transition: opacity .15s ease;
+  }
+  .show-zones .zone-label { opacity: 1; }
+
+  /* 画布尺寸标注(标题旁徽标):页面渲染非 1:1,徽标给出真实画布宽高 */
+  .canvas-annot {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 500; vertical-align: middle;
+    color: var(--bp-text-2); background: var(--bp-panel);
+    border: 1px solid var(--bp-border); border-radius: 999px;
+    padding: 2px 10px; margin-left: 10px; white-space: nowrap;
+    letter-spacing: .02em;
+  }
+  .canvas-annot b { font-family: var(--mono); font-weight: 500; letter-spacing: .01em; color: var(--accent-text); }
+  .show-zones .canvas-annot { border-color: var(--accent); color: var(--accent-text); background: var(--accent-soft); }
+  /* 图例 + 决策 */
+  .legend { margin-top: 26px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 720px) { .legend { grid-template-columns: 1fr; } }
+  .card { background: var(--bp-panel); border: 1px solid var(--bp-border); border-radius: 8px; padding: 16px 18px; }
+  .card h3 { margin: 0 0 10px; font-size: 13px; color: var(--bp-text); display: flex; align-items: center; gap: 8px; }
+  .card h3 .dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+  .dot.fixed { background: var(--accent); }
+  .dot.dyn { background: var(--danger); }
+  .card ul { list-style: none; margin: 0; padding: 0; }
+  .card li { font-size: 12.5px; color: var(--bp-text-2); padding: 4px 0; display: flex; gap: 8px; }
+  .card li b { color: var(--bp-text); font-weight: 600; white-space: nowrap; }
+  .card li .d { color: var(--bp-text-3); font-size: 11.5px; margin-left: auto; white-space: nowrap; align-self: center; }
+  .card li code { font-family: var(--mono); font-size: 11px; background: var(--bp-input); border: 1px solid var(--bp-border); border-radius: 4px; padding: 0 5px; color: var(--accent-text); }
+  .notes { margin-top: 16px; }
+  .notes ol { margin: 0; padding-left: 20px; }
+  .notes li { font-size: 12.5px; color: var(--bp-text-2); padding: 3px 0; }
+  .notes li b { color: var(--bp-text); }
+  .footer { margin-top: 24px; font-size: 11.5px; color: var(--bp-text-3); }
+  .footer code { font-family: var(--mono); font-size: 11px; color: var(--accent-text); }
+
+  /* ══════════════════════════════════════════════════════════
+     ③ 产品样式:后台端·订单列表(列表页)
+       界面样式一律用 B 组产品令牌,不许写死色值。
+     ══════════════════════════════════════════════════════════ */
+  .surface {
+    width: 1000px; height: 600px;
+    background: var(--bg);
+    border: 1px solid var(--bp-border); border-radius: 8px;
+    position: relative; overflow: hidden;
+  }
+  .surface input[type=checkbox] { accent-color: var(--accent); }
+
+  /* 顶栏:品牌 + 环境 */
+  .topbar {
+    height: 44px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 14px; background: var(--bg-surface); border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+  .tb-logo { display: flex; align-items: center; gap: 8px; }
+  .tb-logo .mark {
+    width: 24px; height: 24px; border-radius: 6px; background: var(--accent-soft);
+    color: var(--accent-text); font-size: 13px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .tb-logo .name { font-size: 13px; font-weight: 600; color: var(--text); }
+  .tb-right { display: flex; align-items: center; gap: 14px; font-size: 12px; color: var(--text-muted); }
+  .tb-right .env { font-size: 11px; color: var(--text-dim); }
+  .tb-right .avatar {
+    width: 22px; height: 22px; border-radius: 50%; background: var(--accent-soft);
+    color: var(--accent-text); font-size: 11px; display: flex; align-items: center; justify-content: center;
+  }
+
+  /* 顶栏下:侧栏 + 内容区 */
+  .console { display: flex; height: calc(100% - 44px); }
+
+  /* 左侧导航 */
+  .sidenav {
+    flex: 0 0 160px; background: var(--bg-surface); border-right: 1px solid var(--border);
+    padding: 10px 0; position: relative;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 8px; padding: 9px 16px;
+    font-size: 13px; color: var(--text-muted); cursor: pointer;
+    border-left: 2px solid transparent;
+  }
+  .nav-item:hover { background: var(--bg-hover); color: var(--text); }
+  .nav-item.is-active { background: var(--accent-soft); color: var(--accent-text); border-left-color: var(--accent); font-weight: 600; }
+  .nav-item .ico { width: 14px; text-align: center; font-size: 12px; opacity: .85; }
+
+  /* 内容区 */
+  .content {
+    flex: 1; min-width: 0; padding: 16px 20px 12px;
+    display: flex; flex-direction: column; gap: 12px; position: relative;
+  }
+  .page-head { display: flex; align-items: center; justify-content: space-between; }
+  .page-head h3 { margin: 0; font-size: 16px; font-weight: 650; color: var(--text); }
+  .ph-right { display: flex; align-items: center; gap: 12px; }
+  .ph-count { font-size: 12px; color: var(--text-dim); }
+  .ph-btn {
+    background: var(--bg-surface); border: 1px solid var(--border); color: var(--text);
+    border-radius: 6px; padding: 5px 12px; font-family: var(--sans); font-size: 12.5px; cursor: pointer;
+  }
+  .ph-btn:hover { border-color: var(--accent); color: var(--accent-text); }
+
+  /* 状态页签:过滤入口 */
+  .tabs { display: flex; align-items: flex-end; border-bottom: 1px solid var(--border); position: relative; }
+  .tab {
+    background: transparent; border: none; border-bottom: 2px solid transparent;
+    color: var(--text-muted); font-family: var(--sans); font-size: 13px;
+    padding: 6px 2px; margin: 0 18px -1px 0; cursor: pointer;
+  }
+  .tab i { font-style: normal; color: var(--text-dim); font-size: 11.5px; margin-left: 3px; }
+  .tab:hover { color: var(--text); }
+  .tab.is-active { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
+  .tab.is-active i { color: var(--accent-text); }
+
+  /* 工具条:搜索 + 已选 */
+  .toolbar { display: flex; align-items: center; gap: 12px; position: relative; }
+  .search {
+    width: 260px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); font-family: var(--sans); font-size: 13px; padding: 7px 10px; outline: none;
+  }
+  .search:focus { border-color: var(--accent); }
+  .search::placeholder { color: var(--text-dim); }
+  .toolbar .grow { flex: 1; }
+  .selcount { font-size: 12px; color: var(--accent-text); }
+
+  /* 表格卡:行集(动态) */
+  .table-card {
+    flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0;
+    background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px;
+    overflow: hidden; position: relative;
+  }
+  .table-wrap { flex: 1; overflow: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    font-size: 12px; font-weight: 500; color: var(--text-muted); text-align: left;
+    padding: 9px 12px; border-bottom: 1px solid var(--border); background: var(--bg-hover);
+    position: sticky; top: 0;
+  }
+  th.chk { width: 34px; }
+  th.amt { text-align: right; }
+  tbody td { font-size: 12.5px; color: var(--text); padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  tbody tr:hover { background: var(--bg-hover); }
+  tbody tr.is-selected { background: var(--accent-soft); }
+  tbody tr:last-child td { border-bottom: none; }
+  td.oid { font-family: var(--mono); font-size: 11.5px; color: var(--accent-text); white-space: nowrap; }
+  td.prod { white-space: nowrap; }
+  td.amt { font-family: var(--mono); text-align: right; white-space: nowrap; }
+  td.t { color: var(--text-muted); font-size: 12px; white-space: nowrap; }
+  .st { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 4px; background: var(--bg-hover); }
+  .st[data-st="待付款"] { color: var(--warning); }
+  .st[data-st="待发货"] { color: var(--accent-text); }
+  .st[data-st="已完成"] { color: var(--success); }
+  .st[data-st="已取消"] { color: var(--text-dim); }
+  .act { color: var(--accent); cursor: pointer; white-space: nowrap; }
+  td.empty { text-align: center; color: var(--text-dim); padding: 30px 0; }
+
+  /* 分页条:翻页(动态) */
+  .pager { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--text-muted); position: relative; }
+  .pg {
+    background: var(--bg-surface); border: 1px solid var(--border); color: var(--text);
+    border-radius: 6px; padding: 5px 10px; font-family: var(--sans); font-size: 12.5px; cursor: pointer;
+  }
+  .pg:hover:not(.is-disabled) { border-color: var(--accent); color: var(--accent-text); }
+  .pg.is-disabled { opacity: .38; cursor: default; }
+  .pnum {
+    background: var(--bg-surface); border: 1px solid var(--border); color: var(--text-muted);
+    min-width: 28px; height: 28px; border-radius: 6px; font-family: var(--sans);
+    font-size: 12.5px; cursor: pointer;
+  }
+  .pnum:hover:not(.is-active) { border-color: var(--accent); color: var(--accent-text); }
+  .pnum.is-active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
+  .pg-info { margin-left: 8px; font-size: 12px; color: var(--text-dim); }
+</style>
+<div class="page">
+  <!-- ④ 定版标识:产品 · 里程碑 · 蓝图 · 日期 · v版本 -->
+  <p class="eyebrow">演示集 · 后台端 · 蓝图 · 2026-08-08 · v1</p>
+  <!-- ⑤ 一句话论点 -->
+  <h1>后台端·订单列表:侧栏常驻 + 状态页签过滤表格行集,列表页只留一屏可扫的操作面<span class="canvas-annot" title="页面非 1:1 渲染,此徽标给出真实画布宽高">画布 <b>1920×1080</b></span></h1>
+  <!-- ⑥ 设计者立场 -->
+  <p class="lede">
+    列表是后台日活最高的页面,信息密度高,但操作必须集中在同一屏。本稿把页面拆成「顶栏 + 侧栏 + 内容区」固定骨架,
+    内容区里「状态页签 + 搜索 + 表格 + 分页」是四条动态链路,过滤、勾选、翻页都经 render() 重绘;
+    整套演示稿按后台端 1920×1080 画布标注。
+  </p>
+
+  <!-- ⑦ 交互开关 + 操作引导 -->
+  <div class="controls">
+    <label class="chip"><input type="checkbox" id="zonesToggle"> 显示分区(骨架)</label>
+    <button id="reset">↺ 重置默认布局</button>
+    <span class="hint">点状态页签过滤订单,搜索框按订单号/客户过滤,勾选行、点表头全选联动,点「下一页/上一页」或页码翻页;点重置回到 全部 + 第 1 页。</span>
+  </div>
+
+  <div class="mock-scroll">
+    <!-- ⑧ 界面本体:后台端·订单列表 -->
+    <div class="surface" id="surface">
+      <!-- 顶栏 -->
+      <div class="topbar">
+        <div class="tb-logo"><span class="mark">星</span><span class="name">星云工作台</span></div>
+        <div class="tb-right">
+          <span class="env">运营后台 · v4.2.0</span>
+          <span class="notif">通知</span>
+          <span class="avatar">管</span>
+        </div>
+        <span class="zone-label">TopBar · 1000×44</span>
+      </div>
+
+      <div class="console">
+        <!-- 左侧导航 -->
+        <aside class="sidenav">
+          <div class="nav-item"><span class="ico">◇</span>工作台概览</div>
+          <div class="nav-item is-active"><span class="ico">▣</span>订单管理</div>
+          <div class="nav-item"><span class="ico">◈</span>商品管理</div>
+          <div class="nav-item"><span class="ico">◉</span>客户管理</div>
+          <div class="nav-item"><span class="ico">▤</span>数据分析</div>
+          <div class="nav-item"><span class="ico">✦</span>系统设置</div>
+          <span class="zone-label">SideNav · 160px</span>
+        </aside>
+
+        <!-- 右侧内容区 -->
+        <main class="content">
+          <div class="page-head">
+            <h3>订单列表</h3>
+            <div class="ph-right">
+              <span class="ph-count" id="countLabel">共 10 条(演示抽样)</span>
+              <button class="ph-btn">导出</button>
+            </div>
+          </div>
+
+          <!-- 状态页签 -->
+          <div class="tabs">
+            <button class="tab is-active" data-tab="全部">全部<i>1284</i></button>
+            <button class="tab" data-tab="待付款">待付款<i>96</i></button>
+            <button class="tab" data-tab="待发货">待发货<i>47</i></button>
+            <button class="tab" data-tab="已完成">已完成<i>1083</i></button>
+            <button class="tab" data-tab="已取消">已取消<i>58</i></button>
+            <span class="zone-label">Tabs · 状态过滤</span>
+          </div>
+
+          <!-- 工具条:搜索 + 已选 -->
+          <div class="toolbar">
+            <input class="search" id="search" type="text" placeholder="搜索订单号 / 客户" autocomplete="off">
+            <span class="grow"></span>
+            <span class="selcount" id="selCount">已选 0 项</span>
+          </div>
+
+          <!-- 表格卡 -->
+          <div class="table-card">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th class="chk"><input type="checkbox" id="selectAll"></th>
+                    <th>订单号</th>
+                    <th>客户</th>
+                    <th>商品</th>
+                    <th class="amt">金额</th>
+                    <th>状态</th>
+                    <th>时间</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody"></tbody>
+              </table>
+            </div>
+            <span class="zone-label">Table · 行集(动态)</span>
+          </div>
+
+          <!-- 分页条 -->
+          <div class="pager">
+            <button class="pg" id="pagerPrev" data-nav="prev">‹ 上一页</button>
+            <span class="pg-nums" id="pagerNums"></span>
+            <button class="pg" id="pagerNext" data-nav="next">下一页 ›</button>
+            <span class="pg-info">共 65 页</span>
+            <span class="zone-label">Pager · 翻页(动态)</span>
+          </div>
+
+          <span class="zone-label">Content · flex:1</span>
+        </main>
+      </div>
+
+      <span class="zone-label">Surface · 1000×600</span>
+    </div>
+  </div>
+
+  <!-- ⑨ 图例 -->
+  <div class="legend">
+    <div class="card">
+      <h3><span class="dot fixed"></span> 固定层 · 骨架(代码写死)</h3>
+      <ul>
+        <li><b>顶栏</b><span class="d">1000×44</span></li>
+        <li><b>侧栏导航</b><span class="d">160px</span></li>
+        <li><b>内容区</b><span class="d">flex:1</span></li>
+        <li><b>表格卡</b><span class="d">撑满剩余</span></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3><span class="dot dyn"></span> 动态层 · 内容(状态/注册表加载)</h3>
+      <ul>
+        <li><b>状态页签</b><span class="d">过滤行集</span></li>
+        <li><b>搜索框</b><span class="d">订单号/客户</span></li>
+        <li><b>行勾选 / 全选</b><span class="d">选中态</span></li>
+        <li><b>分页条</b> <code>← → 换页</code></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ⑩ 决策清单 -->
+  <div class="notes">
+    <h3 style="font-size:13px;color:var(--bp-text);margin:0 0 8px;">布局决策</h3>
+    <ol>
+      <li><b>顶栏 + 侧栏常驻</b>:后台多任务并发,导航不收起、不靠面包屑找(为什么:高频操作场景下,常驻导航比收起/跳转的查找成本更低,切换更快)。</li>
+      <li><b>状态页签驱动表格</b>:全部/待付款/待发货/已完成/已取消是订单最常用的分组,点页签后表格行集经 render() 重绘(为什么:过滤是列表最高频操作,入口必须一屏可见,不能藏进更多菜单)。</li>
+      <li><b>行勾选 + 表头全选</b>:全选作用于当前过滤结果整组,选中行高亮 accent-soft(为什么:批量导出/发货面向一组结果,按页勾选会造成漏选误操作)。</li>
+      <li><b>搜索 + 过滤叠加</b>:搜索按订单号/客户模糊匹配,与页签过滤叠加生效,命中 0 条给空态行(为什么:列表检索场景,搜索必须和分类过滤共存而不是互斥)。</li>
+      <li><b>分页 5 条/页演示</b>:真实产品共 65 页、各状态计数为真实统计,演示数据抽样 10 条、可翻 2 页,翻页真可点(为什么:分页机制要真实翻页才能验证,抽样数据保证上一页/下一页/页码都触发 render())。</li>
+      <li><b>配色为演示令牌</b>:整套演示稿统一「星云工作台」令牌,接入真实项目时替换 :root B 段(待确认)。</li>
+    </ol>
+  </div>
+
+  <!-- ⑪ 配色溯源 -->
+  <div class="footer">配色取自演示产品「星云工作台」令牌(<code>demo/admin-list-blueprint.html</code> 的 :root B 段;整套演示稿共用,接入真实项目时替换)。</div>
+</div>
+
+<script>
+(function () {
+  /* 四支柱:数据注册表 → render() 整体重绘 → 事件委托 → 重置 */
+  var el = function (id) { return document.getElementById(id); };
+
+  /* 数据注册表:演示抽样订单(真实产品共 1,284 笔 / 65 页) */
+  var orders = [
+    { id: 'NX20260801001', customer: '杭州云途科技', product: '智能门锁 Pro ×2',   amount: '¥1,296.00', status: '已完成', time: '08-01 10:24' },
+    { id: 'NX20260801005', customer: '上海启明电商', product: '桌面加湿器 ×6',     amount: '¥714.00',   status: '待发货', time: '08-01 14:37' },
+    { id: 'NX20260801012', customer: '广州麦穗商贸', product: '无线充电板 ×3',     amount: '¥447.00',   status: '待付款', time: '08-01 19:05' },
+    { id: 'NX20260802003', customer: '成都万象供应链', product: '便携蓝牙音箱 ×4', amount: '¥796.00',   status: '已完成', time: '08-02 09:12' },
+    { id: 'NX20260802011', customer: '北京远山工贸', product: '智能台灯 ×2',       amount: '¥398.00',   status: '已取消', time: '08-02 16:48' },
+    { id: 'NX20260803002', customer: '深圳南风科技', product: '电动牙刷 ×5',       amount: '¥495.00',   status: '待发货', time: '08-03 11:20' },
+    { id: 'NX20260803009', customer: '武汉江汉优选', product: '保温杯套装 ×8',     amount: '¥472.00',   status: '已完成', time: '08-03 15:56' },
+    { id: 'NX20260804001', customer: '南京梧桐网络', product: '手机支架 ×12',      amount: '¥276.00',   status: '待付款', time: '08-04 08:41' },
+    { id: 'NX20260804007', customer: '重庆山城云商', product: '机械键盘 87键 ×1',  amount: '¥329.00',   status: '已完成', time: '08-04 13:33' },
+    { id: 'NX20260805002', customer: '西安秦川零售', product: '降噪耳机 ×2',       amount: '¥798.00',   status: '待发货', time: '08-05 10:09' }
+  ];
+  var PAGE_SIZE = 5;
+
+  /* 状态:当前页签 / 搜索词 / 页码 / 勾选集 */
+  var state = { tab: '全部', query: '', page: 1, selected: {} };
+
+  /* 过滤:页签 + 搜索叠加 */
+  function filtered() {
+    var q = state.query.trim().toLowerCase();
+    return orders.filter(function (o) {
+      var okTab = state.tab === '全部' || o.status === state.tab;
+      var okQ = !q || o.id.toLowerCase().indexOf(q) > -1 || o.customer.toLowerCase().indexOf(q) > -1;
+      return okTab && okQ;
+    });
+  }
+
+  function render() {
+    var list = filtered();
+    var pages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+    if (state.page < 1) state.page = 1;
+    if (state.page > pages) state.page = pages;
+
+    /* 页签高亮 */
+    var tabs = document.querySelectorAll('.tab');
+    for (var i = 0; i < tabs.length; i++) {
+      tabs[i].classList.toggle('is-active', tabs[i].getAttribute('data-tab') === state.tab);
+    }
+
+    /* 计数 */
+    el('countLabel').textContent = '共 ' + list.length + ' 条(演示抽样)';
+
+    /* 表格行集 */
+    var start = (state.page - 1) * PAGE_SIZE;
+    var slice = list.slice(start, start + PAGE_SIZE);
+    var tb = el('tbody');
+    if (!slice.length) {
+      tb.innerHTML = '<tr><td colspan="8" class="empty">没有符合条件的订单</td></tr>';
+    } else {
+      tb.innerHTML = slice.map(function (o) {
+        return '<tr' + (state.selected[o.id] ? ' class="is-selected"' : '') + '>' +
+          '<td><input type="checkbox" class="row-check" data-check="' + o.id + '"' + (state.selected[o.id] ? ' checked' : '') + '></td>' +
+          '<td class="oid">' + o.id + '</td>' +
+          '<td>' + o.customer + '</td>' +
+          '<td class="prod">' + o.product + '</td>' +
+          '<td class="amt">' + o.amount + '</td>' +
+          '<td><span class="st" data-st="' + o.status + '">' + o.status + '</span></td>' +
+          '<td class="t">' + o.time + '</td>' +
+          '<td><span class="act">查看</span></td>' +
+          '</tr>';
+      }).join('');
+    }
+
+    /* 全选态:作用于当前过滤结果整组 */
+    var ids = list.map(function (o) { return o.id; });
+    var allChecked = ids.length > 0 && ids.every(function (id) { return !!state.selected[id]; });
+    var anyChecked = ids.some(function (id) { return !!state.selected[id]; });
+    var sa = el('selectAll');
+    sa.checked = allChecked;
+    sa.indeterminate = anyChecked && !allChecked;
+
+    /* 已选计数 */
+    var n = 0;
+    for (var k in state.selected) { if (state.selected[k]) n++; }
+    el('selCount').textContent = '已选 ' + n + ' 项';
+
+    /* 分页 */
+    el('pagerPrev').classList.toggle('is-disabled', state.page <= 1);
+    el('pagerNext').classList.toggle('is-disabled', state.page >= pages);
+    var nhtml = '';
+    for (var p = 1; p <= pages; p++) {
+      nhtml += '<button class="pnum' + (p === state.page ? ' is-active' : '') + '" data-pnum="' + p + '">' + p + '</button>';
+    }
+    el('pagerNums').innerHTML = nhtml;
+  }
+
+  /* 事件委托:document 一个 click 监听,closest() 分发 */
+  document.addEventListener('click', function (e) {
+    var tab = e.target.closest('.tab');
+    if (tab) {
+      state.tab = tab.getAttribute('data-tab');
+      state.page = 1;
+      render();
+      return;
+    }
+    var check = e.target.closest('.row-check');
+    if (check) {
+      var id = check.getAttribute('data-check');
+      if (state.selected[id]) { delete state.selected[id]; } else { state.selected[id] = true; }
+      render();
+      return;
+    }
+    var sa = e.target.closest('#selectAll');
+    if (sa) {
+      var ids = filtered().map(function (o) { return o.id; });
+      var all = ids.length > 0 && ids.every(function (id) { return !!state.selected[id]; });
+      for (var i = 0; i < ids.length; i++) {
+        if (all) { delete state.selected[ids[i]]; } else { state.selected[ids[i]] = true; }
+      }
+      render();
+      return;
+    }
+    var nav = e.target.closest('[data-nav]');
+    if (nav) {
+      var pages = Math.max(1, Math.ceil(filtered().length / PAGE_SIZE));
+      var dir = nav.getAttribute('data-nav') === 'next' ? 1 : -1;
+      state.page = Math.min(pages, Math.max(1, state.page + dir));
+      render();
+      return;
+    }
+    var pnum = e.target.closest('[data-pnum]');
+    if (pnum) {
+      state.page = parseInt(pnum.getAttribute('data-pnum'), 10);
+      render();
+      return;
+    }
+  });
+
+  /* 搜索(受控输入,同步状态后 render) */
+  el('search').addEventListener('input', function (e) {
+    state.query = e.target.value;
+    state.page = 1;
+    render();
+  });
+
+  el('zonesToggle').addEventListener('change', function (e) {
+    document.body.classList.toggle('show-zones', e.target.checked);
+  });
+
+  el('reset').addEventListener('click', function () {
+    state = { tab: '全部', query: '', page: 1, selected: {} };
+    el('search').value = '';
+    render();
+  });
+
+  render();
+})();
+</script>

@@ -1,0 +1,434 @@
+<title>可交互蓝图 · 手机端·首页 设计稿 · v1</title>
+
+<style>
+  /* ══════════════════════════════════════════════════════════
+     ① 令牌:两套
+       A. 蓝图外壳:设计稿页面自身的外观(本段基本不改,中性即可)
+       B. 产品示例:演示产品「星云商城」移动端令牌(整套演示稿共用,
+          开工前替换成你项目的令牌;这里仅作演示,不是标准)
+     ══════════════════════════════════════════════════════════ */
+  :root {
+    /* A. 蓝图外壳 */
+    --bp-page: #1b1d20;
+    --bp-panel: #222529;
+    --bp-input: #2b2d30;
+    --bp-border: #33363b;
+    --bp-text: #a9b7c6;
+    --bp-text-2: #8b949e;
+    --bp-text-3: #6a737b;
+
+    /* B. 演示产品·移动端令牌(整套演示稿统一,勿单稿改动) */
+    /* demo product · mobile tokens (light theme; copy verbatim into :root section B) */
+    --bg: #f4f6f8;            /* app background */
+    --bg-surface: #ffffff;    /* card / sheet */
+    --bg-hover: #eef1f4;      /* hover */
+    --border: #e3e7eb;        /* divider */
+    --text: #1b1e24;          /* primary text */
+    --text-muted: #6b7380;    /* secondary text */
+    --text-dim: #9aa3ad;      /* dim text */
+    --accent: #4f7cff;        /* brand blue */
+    --accent-soft: #e8eeff;
+    --accent-text: #2f5ce0;
+    --danger: #e0534f;        /* danger */
+    --success: #3fae7a;       /* success */
+    --warning: #e0a53a;       /* warning */
+    --surface-shadow: rgba(12, 16, 24, .30);  /* phone drop shadow */
+    --mono: ui-monospace, "Cascadia Mono", Consolas, "Courier New", monospace;
+    --sans: "Segoe UI", system-ui, -apple-system, "Microsoft YaHei", "PingFang SC", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bp-page); color: var(--bp-text); font-family: var(--sans); font-size: 14px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  .page { max-width: 1280px; margin: 0 auto; padding: 40px 24px 64px; }
+
+  /* 页头 */
+  .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-text); margin: 0 0 10px; }
+  h1 { font-size: 30px; font-weight: 650; color: #d8e0ea; margin: 0 0 10px; }
+  .lede { font-size: 14px; color: var(--bp-text-2); max-width: 900px; margin: 0 0 22px; }
+
+  /* 控件条 */
+  .controls { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 16px; font-size: 12.5px; color: var(--bp-text-2); }
+  .chip { display: flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--bp-border); border-radius: 999px; cursor: pointer; background: var(--bp-panel); color: var(--bp-text); user-select: none; }
+  .chip input { accent-color: var(--accent); }
+  .controls button { background: var(--bp-panel); color: var(--bp-text); border: 1px solid var(--bp-border); border-radius: 6px; padding: 4px 10px; font-family: var(--sans); font-size: 12.5px; cursor: pointer; }
+  .controls button:hover { background: var(--bp-input); }
+  .hint { flex: 1 1 100%; color: var(--bp-text-3); font-size: 12px; }
+
+  .mock-scroll { overflow-x: auto; padding-bottom: 6px; }
+
+  /* 分区标注 */
+  .zone-label {
+    position: absolute; top: 4px; left: 50%; transform: translateX(-50%);
+    font-size: 10px; letter-spacing: .05em; color: var(--accent-text);
+    background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 4px;
+    padding: 1px 7px; white-space: nowrap; z-index: 40;
+    opacity: 0; pointer-events: none; transition: opacity .15s ease;
+  }
+  .show-zones .zone-label { opacity: 1; }
+
+  /* 画布尺寸标注(标题旁徽标):页面渲染非 1:1,徽标给出真实画布宽高 */
+  .canvas-annot {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 500; vertical-align: middle;
+    color: var(--bp-text-2); background: var(--bp-panel);
+    border: 1px solid var(--bp-border); border-radius: 999px;
+    padding: 2px 10px; margin-left: 10px; white-space: nowrap;
+    letter-spacing: .02em;
+  }
+  .canvas-annot b { font-family: var(--mono); font-weight: 500; letter-spacing: .01em; color: var(--accent-text); }
+  .show-zones .canvas-annot { border-color: var(--accent); color: var(--accent-text); background: var(--accent-soft); }
+  /* 图例 + 决策 */
+  .legend { margin-top: 26px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 720px) { .legend { grid-template-columns: 1fr; } }
+  .card { background: var(--bp-panel); border: 1px solid var(--bp-border); border-radius: 8px; padding: 16px 18px; }
+  .card h3 { margin: 0 0 10px; font-size: 13px; color: var(--bp-text); display: flex; align-items: center; gap: 8px; }
+  .card h3 .dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+  .dot.fixed { background: var(--accent); }
+  .dot.dyn { background: var(--danger); }
+  .card ul { list-style: none; margin: 0; padding: 0; }
+  .card li { font-size: 12.5px; color: var(--bp-text-2); padding: 4px 0; display: flex; gap: 8px; }
+  .card li b { color: var(--bp-text); font-weight: 600; white-space: nowrap; }
+  .card li .d { color: var(--bp-text-3); font-size: 11.5px; margin-left: auto; white-space: nowrap; align-self: center; }
+  .card li code { font-family: var(--mono); font-size: 11px; background: var(--bp-input); border: 1px solid var(--bp-border); border-radius: 4px; padding: 0 5px; color: var(--accent-text); }
+  .notes { margin-top: 16px; }
+  .notes ol { margin: 0; padding-left: 20px; }
+  .notes li { font-size: 12.5px; color: var(--bp-text-2); padding: 3px 0; }
+  .notes li b { color: var(--bp-text); }
+  .footer { margin-top: 24px; font-size: 11.5px; color: var(--bp-text-3); }
+  .footer code { font-family: var(--mono); font-size: 11px; color: var(--accent-text); }
+
+  /* ══════════════════════════════════════════════════════════
+     ③ 产品样式:手机端·首页(星云商城 App,浅色)
+       界面样式一律用 B 组产品令牌,不许写死色值。
+     ══════════════════════════════════════════════════════════ */
+  .surface {
+    width: 390px; height: 780px;
+    background: var(--bg);
+    border: 8px solid var(--text);
+    border-radius: 38px;
+    margin: 0 auto;
+    position: relative; overflow: hidden;
+    display: flex; flex-direction: column;
+    box-shadow: 0 22px 48px var(--surface-shadow);
+  }
+  .surface > .zone-label.bot { top: auto; bottom: 8px; }
+
+  /* 状态栏 */
+  .statusbar {
+    flex: 0 0 auto; display: flex; justify-content: space-between; align-items: center;
+    padding: 9px 20px 3px; font-size: 12px; color: var(--text); background: var(--bg);
+  }
+  .statusbar .time { font-weight: 650; }
+
+  /* 搜索栏 */
+  .searchbar { flex: 0 0 auto; padding: 6px 12px 8px; position: relative; }
+  .search-input {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--bg-hover); border: 1px solid var(--border); border-radius: 18px;
+    padding: 7px 12px; font-size: 13px; color: var(--text-muted);
+  }
+
+  /* 轮播横幅 */
+  .banner {
+    flex: 0 0 auto; height: 120px; margin: 0 12px 12px; border-radius: 14px;
+    background: linear-gradient(135deg, var(--accent-soft), var(--accent));
+    padding: 16px 18px; position: relative;
+  }
+  .banner-tag {
+    display: inline-block; margin: 0 0 9px; font-size: 10px; line-height: 1;
+    color: var(--accent-soft); background: var(--accent); padding: 4px 9px; border-radius: 10px;
+  }
+  .banner-title { margin: 0 0 5px; font-size: 17px; font-weight: 650; color: var(--text); }
+  .banner-sub { margin: 0; font-size: 11.5px; color: var(--text-muted); }
+
+  /* 分类八宫格 */
+  .cats {
+    flex: 0 0 auto; position: relative; background: var(--bg-surface);
+    border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    padding: 10px 6px 6px;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px 2px;
+  }
+  .cell {
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    border: 1px solid transparent; border-radius: 8px; padding: 5px 0 6px; cursor: pointer;
+    background: none; font-family: var(--sans);
+  }
+  .cell .ci { font-size: 22px; line-height: 1; }
+  .cell .cl { font-size: 11px; color: var(--text-muted); }
+  .cell:hover .cl { color: var(--text); }
+  .cell.is-on { border-color: var(--accent); background: var(--accent-soft); }
+  .cell.is-on .cl { color: var(--accent-text); font-weight: 600; }
+
+  /* 内容区(动态,由 render() 重绘) */
+  .content { flex: 1 1 0; position: relative; overflow-y: auto; overscroll-behavior: contain; background: var(--bg); }
+  .content::-webkit-scrollbar { width: 0; }
+  .feed-head { display: flex; align-items: baseline; justify-content: space-between; padding: 10px 12px 8px; }
+  .feed-title { font-size: 15px; font-weight: 650; color: var(--text); }
+  .feed-sub { font-size: 11px; color: var(--text-muted); }
+  .feed-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 12px 14px; }
+  .pcard { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .pthumb {
+    height: 92px; display: flex; align-items: center; justify-content: center;
+    font-size: 38px; background: var(--bg-hover);
+  }
+  .pname {
+    margin: 8px 10px 4px; font-size: 12.5px; line-height: 1.35; color: var(--text);
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .pprice { margin: 0 10px 10px; font-size: 14px; font-weight: 650; color: var(--accent-text); }
+  .psales { margin-left: 6px; font-size: 10.5px; font-weight: 400; color: var(--text-dim); }
+
+  /* 空态 / 我的 */
+  .empty { padding: 74px 0; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .empty-icon { font-size: 52px; line-height: 1; }
+  .empty p { margin: 0; font-size: 14px; color: var(--text-muted); }
+  .empty .empty-sub { font-size: 12px; color: var(--text-dim); }
+  .profile { padding-bottom: 14px; }
+  .profile-head { display: flex; align-items: center; gap: 12px; padding: 16px 14px; background: var(--bg-surface); border-bottom: 1px solid var(--border); }
+  .avatar {
+    width: 48px; height: 48px; border-radius: 50%; flex: 0 0 auto;
+    background: var(--accent); color: var(--accent-soft);
+    display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 650;
+  }
+  .nick { margin: 0; font-size: 15px; font-weight: 650; color: var(--text); }
+  .profile-sub { margin: 2px 0 0; font-size: 11.5px; color: var(--text-muted); }
+  .prow {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 13px 14px; background: var(--bg-surface); border-bottom: 1px solid var(--border);
+    font-size: 13.5px; color: var(--text);
+  }
+  .prow .arrow { color: var(--text-dim); font-size: 16px; }
+
+  /* 底部 TabBar */
+  .tabbar {
+    flex: 0 0 auto; display: flex; position: relative;
+    background: var(--bg-surface); border-top: 1px solid var(--border);
+  }
+  .tab-btn {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+    padding: 7px 0 9px; background: none; border: none; cursor: pointer;
+    font-family: var(--sans); font-size: 11px; color: var(--text-muted);
+  }
+  .tab-btn .ti { font-size: 18px; line-height: 1; }
+  .tab-btn.is-on { color: var(--accent-text); font-weight: 600; }
+</style>
+
+<div class="page">
+  <!-- ④ 定版标识:产品 · 里程碑 · 蓝图 · 日期 · v版本 -->
+  <p class="eyebrow">演示集 · 手机端 · 蓝图 · 2026-08-08 · v1</p>
+  <!-- ⑤ 一句话论点 -->
+  <h1>手机端·首页:搜索 + 轮播 + 八宫格分类 + 双列推荐流,一屏之内「逛」为主、「找」为辅<span class="canvas-annot" title="页面非 1:1 渲染,此徽标给出真实画布宽高">画布 <b>390×844</b></span></h1>
+  <!-- ⑥ 设计者立场 -->
+  <p class="lede">
+    手机首页是电商 App 的流量入口,一屏要塞进搜索、运营位、分类与推荐流。本稿把「搜索栏 / 轮播横幅 / 分类八宫格 / 底部 TabBar」
+    做成固定骨架,让推荐流(按分类过滤)与 首页/购物车/我的 内容区(按 Tab 切换)作为动态层整体重绘;
+    整套演示稿按手机端 390×844 画布标注。
+  </p>
+
+  <!-- ⑦ 交互开关 + 操作引导 -->
+  <div class="controls">
+    <label class="chip"><input type="checkbox" id="zonesToggle"> 显示分区(骨架)</label>
+    <button id="reset">↺ 重置默认布局</button>
+    <span class="hint">点分类格子过滤下方推荐流(再点一次回到全部);点底部 TabBar 在 首页/购物车/我的 间切换;点重置回 首页+全部。</span>
+  </div>
+
+  <div class="mock-scroll">
+    <!-- ⑧ 界面本体:手机端·首页(星云商城 App) -->
+    <div class="surface" id="surface">
+      <div class="statusbar"><span class="time">9:41</span><span>📶  🔋</span></div>
+
+      <div class="searchbar">
+        <div class="search-input">🔍 搜索「商品 / 品牌」</div>
+        <span class="zone-label">Search · 100%×44</span>
+      </div>
+
+      <div class="banner">
+        <p class="banner-tag">限时特惠</p>
+        <p class="banner-title">星云 X1 Pro 首发 · 至高立减 ¥500</p>
+        <p class="banner-sub">支持 24 期免息 · 以旧换新</p>
+        <span class="zone-label">Banner · 100%×120</span>
+      </div>
+
+      <div class="cats" id="cats">
+        <button class="cell" data-cat="手机数码"><span class="ci">📱</span><span class="cl">手机数码</span></button>
+        <button class="cell" data-cat="家用电器"><span class="ci">🔌</span><span class="cl">家用电器</span></button>
+        <button class="cell" data-cat="服饰鞋包"><span class="ci">👕</span><span class="cl">服饰鞋包</span></button>
+        <button class="cell" data-cat="美妆护肤"><span class="ci">💄</span><span class="cl">美妆护肤</span></button>
+        <button class="cell" data-cat="食品生鲜"><span class="ci">🍎</span><span class="cl">食品生鲜</span></button>
+        <button class="cell" data-cat="母婴玩具"><span class="ci">🧸</span><span class="cl">母婴玩具</span></button>
+        <button class="cell" data-cat="运动户外"><span class="ci">⛺</span><span class="cl">运动户外</span></button>
+        <button class="cell" data-cat="图书文娱"><span class="ci">📚</span><span class="cl">图书文娱</span></button>
+        <span class="zone-label">Cats · 8宫格</span>
+      </div>
+
+      <div class="content">
+        <div id="contentBody"></div>
+        <span class="zone-label">Content · 动态(注册表)</span>
+      </div>
+
+      <div class="tabbar">
+        <button class="tab-btn" data-tab="home"><span class="ti">🏠</span><span>首页</span></button>
+        <button class="tab-btn" data-tab="cart"><span class="ti">🛒</span><span>购物车</span></button>
+        <button class="tab-btn" data-tab="mine"><span class="ti">👤</span><span>我的</span></button>
+        <span class="zone-label">TabBar · 3-tab</span>
+      </div>
+
+      <span class="zone-label bot">Surface · 390×780</span>
+    </div>
+  </div>
+
+  <!-- ⑨ 图例 -->
+  <div class="legend">
+    <div class="card">
+      <h3><span class="dot fixed"></span> 固定层 · 骨架(代码写死)</h3>
+      <ul>
+        <li><b>手机框</b><span class="d">390×780</span></li>
+        <li><b>搜索栏</b><span class="d">100%×44</span></li>
+        <li><b>轮播横幅</b><span class="d">100%×120</span></li>
+        <li><b>分类八宫格</b><span class="d">4列×2行</span></li>
+        <li><b>底部 TabBar</b><span class="d">3-tab</span></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3><span class="dot dyn"></span> 动态层 · 内容(状态/注册表加载)</h3>
+      <ul>
+        <li><b>推荐流</b><span class="d">按分类过滤</span></li>
+        <li><b>内容区</b> <code>home → cart → mine</code></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ⑩ 决策清单 -->
+  <div class="notes">
+    <h3 style="font-size:13px;color:var(--bp-text);margin:0 0 8px;">布局决策</h3>
+    <ol>
+      <li><b>搜索置顶</b>:搜索栏固定在手机顶部,运营位与分类之下都是「逛」的路径(为什么:电商首页超过一半流量来自搜索与分类直达,置顶可触达性最高)。</li>
+      <li><b>八宫格分类</b>:8 个格子 4×2 两行排布,一格一品类,整屏不滚动即可见全部入口(为什么:首屏无需滑动就能直达品类,减少认知成本与滚动决策)。</li>
+      <li><b>推荐流双列卡片</b>:卡片只放 名称/价格/销量 三要素,2 列压缩单卡信息量(为什么:双列瀑布能同屏展示更多商品,销量数字提供从众信号,不做大图占屏)。</li>
+      <li><b>TabBar 三标签切换内容区</b>:首页/购物车/我的共用同一内容区,骨架不动、内容区经 render() 整体重绘(为什么:底部导航是移动端第一层级,切换必须即时反馈,空态/个人页都走同一条渲染管道)。</li>
+      <li><b>分类过滤即回首页</b>:点分类格子直接带出过滤后的推荐流并切回首页 Tab(为什么:过滤是首页主行为,不能让用户停在购物车里看不到过滤结果)。</li>
+      <li><b>购物车空态引导</b>:未加购时给出空态 + 回首页指引(为什么:空态文案降低「没东西」的失落感,并给出下一步动作,避免死路)。</li>
+      <li><b>配色为演示令牌</b>:整套演示稿统一「星云商城」移动端令牌,接入真实项目时替换 :root B 段(待确认)。</li>
+    </ol>
+  </div>
+
+  <!-- ⑪ 配色溯源 -->
+  <div class="footer">配色取自演示产品「星云商城」移动端令牌(<code>demo/mobile-home-blueprint.html</code> 的 :root B 段;整套演示稿共用,接入真实项目时替换)。</div>
+</div>
+
+<script>
+(function () {
+  /* 四支柱:数据注册表 → render() 整体重绘 → 事件委托 → 重置 */
+  var el = function (id) { return document.getElementById(id); };
+
+  /* 数据注册表:商品(带品类标签)+ 状态 */
+  var products = [
+    { id: 1,  name: '星云 X1 Pro 5G 手机',   price: '¥4299', sales: '1.2万+', cat: '手机数码', icon: '📱' },
+    { id: 2,  name: '星云降噪耳机 Pro',       price: '¥699',  sales: '8600+',  cat: '手机数码', icon: '🎧' },
+    { id: 3,  name: '智能手表 S3',            price: '¥1299', sales: '4100+',  cat: '手机数码', icon: '⌚' },
+    { id: 4,  name: '星云扫地机器人',         price: '¥1999', sales: '6300+',  cat: '家用电器', icon: '🤖' },
+    { id: 5,  name: '空气炸锅 5L',            price: '¥329',  sales: '2.3万+', cat: '家用电器', icon: '🍳' },
+    { id: 6,  name: '轻量运动夹克',           price: '¥299',  sales: '7800+',  cat: '服饰鞋包', icon: '🧥' },
+    { id: 7,  name: '复古慢跑鞋',             price: '¥459',  sales: '1.1万+', cat: '服饰鞋包', icon: '👟' },
+    { id: 8,  name: '玻尿酸补水面膜',         price: '¥139',  sales: '3.6万+', cat: '美妆护肤', icon: '💧' },
+    { id: 9,  name: '云南高山蓝莓',           price: '¥69',   sales: '5200+',  cat: '食品生鲜', icon: '🫐' },
+    { id: 10, name: '每日坚果礼盒',           price: '¥99',   sales: '9400+',  cat: '食品生鲜', icon: '🥜' },
+    { id: 11, name: '大颗粒积木套装',         price: '¥199',  sales: '6600+',  cat: '母婴玩具', icon: '🧩' },
+    { id: 12, name: '户外露营帐篷',           price: '¥599',  sales: '1800+',  cat: '运动户外', icon: '⛺' },
+    { id: 13, name: '碳素登山杖',             price: '¥129',  sales: '3000+',  cat: '运动户外', icon: '🥾' },
+    { id: 14, name: '《产品设计沉思录》',     price: '¥68',   sales: '4500+',  cat: '图书文娱', icon: '📚' },
+    { id: 15, name: '头戴式降噪耳机',         price: '¥899',  sales: '2700+',  cat: '图书文娱', icon: '🎼' }
+  ];
+
+  var state = { tab: 'home', category: '全部' }; // tab: home|cart|mine; category: 全部|品类名
+
+  /* 三个内容区模板:首页推荐流 / 购物车空态 / 我的 */
+  function feedHTML() {
+    var list = state.category === '全部'
+      ? products
+      : products.filter(function (p) { return p.cat === state.category; });
+    var sub = state.category === '全部'
+      ? '全部 · ' + list.length + ' 件'
+      : state.category + ' · ' + list.length + ' 件';
+    var cards = list.map(function (p) {
+      return '<div class="pcard">' +
+        '<div class="pthumb">' + p.icon + '</div>' +
+        '<p class="pname">' + p.name + '</p>' +
+        '<p class="pprice">' + p.price + '<span class="psales">' + p.sales + ' 已售</span></p>' +
+        '</div>';
+    }).join('');
+    return '<div class="feed-head"><span class="feed-title">为你推荐</span><span class="feed-sub">' + sub + '</span></div>' +
+      '<div class="feed-grid">' + cards + '</div>';
+  }
+
+  function cartHTML() {
+    return '<div class="empty">' +
+      '<div class="empty-icon">🛒</div>' +
+      '<p>购物车还是空的</p>' +
+      '<p class="empty-sub">去「首页」挑几件心仪好物吧</p>' +
+      '</div>';
+  }
+
+  function profileHTML() {
+    return '<div class="profile">' +
+      '<div class="profile-head">' +
+        '<div class="avatar">星</div>' +
+        '<div><p class="nick">星云用户_0826</p><p class="profile-sub">普通会员 · Lv.3</p></div>' +
+      '</div>' +
+      '<div class="prow"><span>我的订单</span><span class="arrow">›</span></div>' +
+      '<div class="prow"><span>收货地址</span><span class="arrow">›</span></div>' +
+      '<div class="prow"><span>优惠券</span><span class="arrow">›</span></div>' +
+      '<div class="prow"><span>售后 / 退款</span><span class="arrow">›</span></div>' +
+      '<div class="prow"><span>客服中心</span><span class="arrow">›</span></div>' +
+      '<div class="prow"><span>设置</span><span class="arrow">›</span></div>' +
+      '</div>';
+  }
+
+  function render() {
+    /* 内容区:按 Tab 整体重绘 */
+    var body = el('contentBody');
+    if (state.tab === 'home') { body.innerHTML = feedHTML(); }
+    else if (state.tab === 'cart') { body.innerHTML = cartHTML(); }
+    else { body.innerHTML = profileHTML(); }
+
+    /* 分类格高亮:当前过滤项 */
+    var cells = document.querySelectorAll('#cats .cell');
+    for (var i = 0; i < cells.length; i++) {
+      cells[i].classList.toggle('is-on', cells[i].getAttribute('data-cat') === state.category);
+    }
+
+    /* Tab 高亮:当前内容区 */
+    var tabs = document.querySelectorAll('.tab-btn');
+    for (var j = 0; j < tabs.length; j++) {
+      tabs[j].classList.toggle('is-on', tabs[j].getAttribute('data-tab') === state.tab);
+    }
+  }
+
+  /* 事件委托:分类过滤 + Tab 切换 */
+  document.addEventListener('click', function (e) {
+    var cell = e.target.closest('.cell');
+    if (cell) {
+      var c = cell.getAttribute('data-cat');
+      state.category = state.category === c ? '全部' : c;
+      state.tab = 'home';
+      render();
+      return;
+    }
+    var tab = e.target.closest('.tab-btn');
+    if (tab) {
+      state.tab = tab.getAttribute('data-tab');
+      render();
+    }
+  });
+
+  el('zonesToggle').addEventListener('change', function (e) {
+    document.body.classList.toggle('show-zones', e.target.checked);
+  });
+
+  el('reset').addEventListener('click', function () {
+    state = { tab: 'home', category: '全部' };
+    render();
+  });
+
+  render();
+})();
+</script>

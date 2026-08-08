@@ -1,0 +1,419 @@
+<title>可交互蓝图 · 后台端·工作台 设计稿 · v1</title>
+
+<style>
+  /* ══════════════════════════════════════════════════════════
+     ① 令牌:两套
+       A. 蓝图外壳:设计稿页面自身的外观(本段基本不改,中性即可)
+       B. 产品示例:演示产品「星云工作台」后台端令牌(整套演示稿共用,
+          开工前替换成你项目的令牌;这里仅作演示,不是标准)
+     ══════════════════════════════════════════════════════════ */
+  :root {
+    /* A. 蓝图外壳 */
+    --bp-page: #1b1d20;
+    --bp-panel: #222529;
+    --bp-input: #2b2d30;
+    --bp-border: #33363b;
+    --bp-text: #a9b7c6;
+    --bp-text-2: #8b949e;
+    --bp-text-3: #6a737b;
+
+    /* demo product · admin tokens (copy verbatim into :root section B) */
+    --bg: #14161a;            /* app background */
+    --bg-surface: #1c1f24;    /* panel / sidebar */
+    --bg-hover: #262a31;      /* hover */
+    --border: #33373f;        /* divider */
+    --text: #e8eaee;          /* primary text */
+    --text-muted: #9aa3ad;    /* secondary text */
+    --text-dim: #6a737d;      /* dim text */
+    --accent: #4f7cff;        /* brand blue */
+    --accent-soft: #2a3d6b;
+    --accent-text: #b9cdff;
+    --danger: #e0534f;        /* danger */
+    --success: #3fae7a;       /* success */
+    --warning: #e0a53a;       /* warning */
+    --mono: ui-monospace, "Cascadia Mono", Consolas, "Courier New", monospace;
+    --sans: "Segoe UI", system-ui, -apple-system, "Microsoft YaHei", "PingFang SC", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bp-page); color: var(--bp-text); font-family: var(--sans); font-size: 14px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  .page { max-width: 1280px; margin: 0 auto; padding: 40px 24px 64px; }
+
+  /* 页头 */
+  .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-text); margin: 0 0 10px; }
+  h1 { font-size: 30px; font-weight: 650; color: #d8e0ea; margin: 0 0 10px; }
+  .lede { font-size: 14px; color: var(--bp-text-2); max-width: 900px; margin: 0 0 22px; }
+
+  /* 控件条 */
+  .controls { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 16px; font-size: 12.5px; color: var(--bp-text-2); }
+  .chip { display: flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--bp-border); border-radius: 999px; cursor: pointer; background: var(--bp-panel); color: var(--bp-text); user-select: none; }
+  .chip input { accent-color: var(--accent); }
+  .controls button { background: var(--bp-panel); color: var(--bp-text); border: 1px solid var(--bp-border); border-radius: 6px; padding: 4px 10px; font-family: var(--sans); font-size: 12.5px; cursor: pointer; }
+  .controls button:hover { background: var(--bp-input); }
+  .hint { flex: 1 1 100%; color: var(--bp-text-3); font-size: 12px; }
+
+  .mock-scroll { overflow-x: auto; padding-bottom: 6px; }
+
+  /* 分区标注 */
+  .zone-label {
+    position: absolute; top: 4px; left: 50%; transform: translateX(-50%);
+    font-size: 10px; letter-spacing: .05em; color: var(--accent-text);
+    background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 4px;
+    padding: 1px 7px; white-space: nowrap; z-index: 40;
+    opacity: 0; pointer-events: none; transition: opacity .15s ease;
+  }
+  .show-zones .zone-label { opacity: 1; }
+
+  /* 画布尺寸标注(标题旁徽标):页面渲染非 1:1,徽标给出真实画布宽高 */
+  .canvas-annot {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 500; vertical-align: middle;
+    color: var(--bp-text-2); background: var(--bp-panel);
+    border: 1px solid var(--bp-border); border-radius: 999px;
+    padding: 2px 10px; margin-left: 10px; white-space: nowrap;
+    letter-spacing: .02em;
+  }
+  .canvas-annot b { font-family: var(--mono); font-weight: 500; letter-spacing: .01em; color: var(--accent-text); }
+  .show-zones .canvas-annot { border-color: var(--accent); color: var(--accent-text); background: var(--accent-soft); }
+  /* 图例 + 决策 */
+  .legend { margin-top: 26px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 720px) { .legend { grid-template-columns: 1fr; } }
+  .card { background: var(--bp-panel); border: 1px solid var(--bp-border); border-radius: 8px; padding: 16px 18px; }
+  .card h3 { margin: 0 0 10px; font-size: 13px; color: var(--bp-text); display: flex; align-items: center; gap: 8px; }
+  .card h3 .dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+  .dot.fixed { background: var(--accent); }
+  .dot.dyn { background: var(--danger); }
+  .card ul { list-style: none; margin: 0; padding: 0; }
+  .card li { font-size: 12.5px; color: var(--bp-text-2); padding: 4px 0; display: flex; gap: 8px; }
+  .card li b { color: var(--bp-text); font-weight: 600; white-space: nowrap; }
+  .card li .d { color: var(--bp-text-3); font-size: 11.5px; margin-left: auto; white-space: nowrap; align-self: center; }
+  .card li code { font-family: var(--mono); font-size: 11px; background: var(--bp-input); border: 1px solid var(--bp-border); border-radius: 4px; padding: 0 5px; color: var(--accent-text); }
+  .notes { margin-top: 16px; }
+  .notes ol { margin: 0; padding-left: 20px; }
+  .notes li { font-size: 12.5px; color: var(--bp-text-2); padding: 3px 0; }
+  .notes li b { color: var(--bp-text); }
+  .footer { margin-top: 24px; font-size: 11.5px; color: var(--bp-text-3); }
+  .footer code { font-family: var(--mono); font-size: 11px; color: var(--accent-text); }
+
+  /* ══════════════════════════════════════════════════════════
+     ③ 产品样式:后台端·工作台(运营工作台)
+       界面样式一律用 B 组产品令牌,不许写死色值。
+     ══════════════════════════════════════════════════════════ */
+  .surface {
+    width: 1000px; height: 600px;
+    background: var(--bg);
+    border: 1px solid var(--bp-border); border-radius: 8px;
+    position: relative; overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  /* 顶栏 */
+  .topbar {
+    flex: 0 0 52px; display: flex; align-items: center; gap: 26px;
+    padding: 0 20px; background: var(--bg-surface); border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+  .topbar .logo { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: var(--text); }
+  .topbar .logo i {
+    width: 26px; height: 26px; border-radius: 7px; background: var(--accent);
+    color: var(--text); font-style: normal; font-size: 13px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .topbar nav { display: flex; gap: 2px; }
+  .topbar nav a { color: var(--text-muted); font-size: 13px; padding: 5px 12px; border-radius: 6px; text-decoration: none; cursor: default; }
+  .topbar nav a.on { color: var(--text); background: var(--bg-hover); }
+  .topbar .user { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted); }
+  .topbar .user i {
+    width: 24px; height: 24px; border-radius: 50%; background: var(--accent-soft);
+    color: var(--accent-text); font-style: normal; font-size: 11px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .topbar .user b { color: var(--text); font-weight: 600; }
+  /* 主体 */
+  .main { flex: 1; display: flex; flex-direction: column; gap: 14px; padding: 14px 20px 18px; min-height: 0; }
+  /* KPI 行 */
+  .kpis { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .kpi { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+  .kpi .k-label { font-size: 12px; color: var(--text-muted); }
+  .kpi .k-value { font-size: 22px; font-weight: 650; color: var(--text); margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .kpi .k-trend { font-size: 11px; margin-top: 4px; }
+  .k-trend.up { color: var(--success); }
+  .k-trend.down { color: var(--danger); }
+  /* 中部两栏 */
+  .cols { flex: 1; display: flex; gap: 14px; min-height: 0; }
+  .panel { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; position: relative; min-height: 0; }
+  .panel-trend { flex: 1.25; }
+  .panel-orders { flex: 1; }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px 0; }
+  .panel-title { font-size: 13px; color: var(--text); font-weight: 600; }
+  .panel-count { font-size: 11.5px; color: var(--text-dim); }
+  .seg { display: flex; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 2px; }
+  .seg button { background: none; border: none; color: var(--text-muted); font-size: 11.5px; font-family: var(--sans); padding: 3px 10px; border-radius: 4px; cursor: pointer; }
+  .seg button.on { background: var(--accent); color: var(--text); font-weight: 600; }
+  /* 趋势图 */
+  .chart { flex: 1; padding: 14px 14px 4px; display: flex; flex-direction: column; min-height: 0; }
+  .chart-bars { flex: 1; display: flex; align-items: flex-end; gap: 14px; padding: 0 6px; min-height: 0; }
+  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 6px; height: 100%; cursor: pointer; }
+  .bar { width: 70%; max-width: 26px; background: var(--accent); border-radius: 3px 3px 0 0; min-height: 2px; transition: height .18s ease; }
+  .bar-col:hover .bar { background: var(--accent-soft); }
+  .bar-col.sel .bar { background: var(--accent-text); }
+  .bar-label { font-size: 10px; color: var(--text-dim); }
+  .chart-tip { height: 20px; font-size: 11.5px; color: var(--accent-text); text-align: center; padding: 6px 0 2px; }
+  /* 订单表 */
+  .orders { padding: 12px 14px 10px; display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip-p { font-size: 11px; color: var(--text-muted); padding: 2px 9px; border: 1px solid var(--border); border-radius: 999px; cursor: pointer; background: none; font-family: var(--sans); }
+  .chip-p.on { color: var(--text); border-color: var(--accent); background: var(--accent-soft); }
+  .ord-table { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  .ord-head, .ord-row { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 8px; padding: 6px 8px; font-size: 11.5px; }
+  .ord-head { color: var(--text-dim); border-bottom: 1px solid var(--border); }
+  .ord-row { color: var(--text-muted); border-bottom: 1px solid var(--border); }
+  .ord-row:last-child { border-bottom: none; }
+  .ord-no { color: var(--accent-text); font-family: var(--mono); font-size: 11px; }
+  .ord-cust { color: var(--text); }
+  .ord-amt { font-variant-numeric: tabular-nums; }
+  .st { font-size: 11px; padding: 1px 8px; border-radius: 999px; justify-self: start; border: 1px solid var(--border); }
+  .st-paid { color: var(--text-muted); background: var(--bg-hover); }
+  .st-ship { color: var(--accent-text); background: var(--accent-soft); border-color: transparent; }
+  .st-done { color: var(--success); background: var(--bg-hover); }
+  .st-pay { color: var(--warning); background: var(--bg-hover); }
+  .ord-empty { padding: 18px 0; text-align: center; color: var(--text-dim); font-size: 12px; }
+</style>
+
+<div class="page">
+  <!-- ④ 定版标识:产品 · 里程碑 · 蓝图 · 日期 · v版本 -->
+  <p class="eyebrow">演示集 · 后台端·工作台 · 蓝图 · 2026-08-08 · v1</p>
+  <!-- ⑤ 一句话论点 -->
+  <h1>后台端·工作台:顶部 KPI + 中部趋势图 + 右侧订单表,一屏看完整天运营<span class="canvas-annot" title="页面非 1:1 渲染,此徽标给出真实画布宽高">画布 <b>1920×1080</b></span></h1>
+  <!-- ⑥ 设计者立场 -->
+  <p class="lede">
+    工作台是后台每天开机的第一屏,信息密度高但必须「三秒定位」。本稿把首屏固定为
+    「顶栏 → KPI 四卡 → 趋势图 + 订单表」三层骨架;时间范围(今日/近7日/近30日)、
+    图柱数值、状态筛选都从数据注册表读,切换经单一 render() 整体重绘;
+    整套演示稿按后台端 1920×1080 画布标注。
+  </p>
+
+  <!-- ⑦ 交互开关 + 操作引导 -->
+  <div class="controls">
+    <label class="chip"><input type="checkbox" id="zonesToggle"> 显示分区(骨架)</label>
+    <button id="reset">↺ 重置默认布局</button>
+    <span class="hint">点时间范围(今日/近7日/近30日)切换 KPI 与图柱;点图柱看单日数值;点状态筛选 chip 过滤订单表;点重置回「今日 + 全部」。</span>
+  </div>
+
+  <div class="mock-scroll">
+    <!-- ⑧ 界面本体:后台端·工作台 -->
+    <div class="surface" id="surface">
+      <div class="topbar">
+        <div class="logo"><i>星</i>星云工作台</div>
+        <nav><a class="on">工作台</a><a>订单</a><a>商品</a><a>数据</a></nav>
+        <div class="user"><i>林</i><b>林舟</b><span>运营</span></div>
+        <span class="zone-label">Header · 1000×52</span>
+      </div>
+      <div class="main">
+        <div class="kpis" id="kpis">
+          <span class="zone-label">KPI Row · 4列</span>
+        </div>
+        <div class="cols">
+          <div class="panel panel-trend">
+            <div class="panel-head">
+              <span class="panel-title" id="trendTitle">近7日销售额</span>
+              <span class="seg" id="seg"></span>
+            </div>
+            <div class="chart">
+              <div class="chart-bars" id="chartBars"></div>
+              <div class="chart-tip" id="chartTip">近7日 · 点击图柱查看单日数值</div>
+            </div>
+            <span class="zone-label">Trend · flex:1.25</span>
+          </div>
+          <div class="panel panel-orders">
+            <div class="panel-head">
+              <span class="panel-title">最近订单</span>
+              <span class="panel-count" id="ordCount">5 单</span>
+            </div>
+            <div class="orders">
+              <div class="chips" id="chips"></div>
+              <div class="ord-table">
+                <div class="ord-head"><span>订单号</span><span>客户</span><span>金额</span><span>状态</span></div>
+                <div id="ordBody"></div>
+              </div>
+            </div>
+            <span class="zone-label">Orders · flex:1</span>
+          </div>
+        </div>
+      </div>
+      <span class="zone-label">Surface · 1000×600</span>
+    </div>
+  </div>
+
+  <!-- ⑨ 图例 -->
+  <div class="legend">
+    <div class="card">
+      <h3><span class="dot fixed"></span> 固定层 · 骨架(代码写死)</h3>
+      <ul>
+        <li><b>顶栏 Header</b><span class="d">1000×52</span></li>
+        <li><b>KPI 行</b><span class="d">4 列栅格</span></li>
+        <li><b>趋势图区</b><span class="d">flex:1.25</span></li>
+        <li><b>订单表区</b><span class="d">flex:1</span></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3><span class="dot dyn"></span> 动态层 · 内容(状态/注册表加载)</h3>
+      <ul>
+        <li><b>时间范围 seg</b> <code>今日/近7日/近30日</code></li>
+        <li><b>KPI 数值 / 图柱</b><span class="d">注册表切换</span></li>
+        <li><b>图柱 tooltip 行</b><span class="d">点击出值</span></li>
+        <li><b>状态筛选 chips</b><span class="d">过滤订单行</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ⑩ 决策清单 -->
+  <div class="notes">
+    <h3 style="font-size:13px;color:var(--bp-text);margin:0 0 8px;">布局决策</h3>
+    <ol>
+      <li><b>一屏三层</b>:顶部 KPI 给结论、中部趋势图给走势、右侧订单表给可操作项,自上而下由「概览」收束到「行动」(为什么:工作台首屏要三秒定位当天全貌,KPI 引导注意力、订单承接操作,层级不交叉)。</li>
+      <li><b>时间范围切换 = 换数据注册表的 key</b>:KPI 与图柱同源,经单一 render() 整体重绘(为什么:数据同源只改 range key,杜绝 KPI 与图表不同步的中间态;行为类改动只进 JS)。</li>
+      <li><b>图柱用纯 CSS 高度占比</b>:柱高 = value/max,点柱把数值写进 tooltip 行而非悬浮浮层(为什么:零依赖零遮挡,行内提示在密集面板里不易盖住相邻数据)。</li>
+      <li><b>状态筛选用可见 chips 而非下拉</b>:全部/待付款/待发货/已付款/已完成 直接外露(为什么:后台高频筛选,选项可见可一眼点选,省一次展开动作)。</li>
+      <li><b>配色为演示令牌</b>:整套演示稿统一「星云工作台」令牌,接入真实项目时替换 :root B 段(待确认)。</li>
+    </ol>
+  </div>
+
+  <!-- ⑪ 配色溯源 -->
+  <div class="footer">配色取自演示产品「星云工作台」令牌(<code>demo/admin-dashboard-blueprint.html</code> 的 :root B 段;整套演示稿共用,接入真实项目时替换)。</div>
+</div>
+
+<script>
+(function () {
+  /* 四支柱:数据注册表 → render() 整体重绘 → 事件委托 → 重置 */
+  var el = function (id) { return document.getElementById(id); };
+
+  /* 数据注册表:三个时间范围,每个含 KPI 与图柱(柱高 = value/max) */
+  var DATA = {
+    today: {
+      label: '今日',
+      trendTitle: '今日分时销售额',
+      kpis: [
+        { label: '今日订单', value: '1,284', trend: '+12%', up: true },
+        { label: '今日GMV', value: '¥86.4万', trend: '+8%', up: true },
+        { label: '新增用户', value: '312', trend: '+5%', up: true },
+        { label: '待发货', value: '47', trend: '-9%', up: false }
+      ],
+      bars: [
+        { d: '0-6时', v: 2.1 }, { d: '6-9时', v: 4.6 }, { d: '9-12时', v: 12.8 },
+        { d: '12-14时', v: 8.9 }, { d: '14-17时', v: 15.2 }, { d: '17-20时', v: 11.4 }, { d: '20-24时', v: 7.3 }
+      ]
+    },
+    week: {
+      label: '近7日',
+      trendTitle: '近7日销售额',
+      kpis: [
+        { label: '近7日订单', value: '8,942', trend: '+6%', up: true },
+        { label: '近7日GMV', value: '¥612万', trend: '+11%', up: true },
+        { label: '新增用户', value: '2,018', trend: '+9%', up: true },
+        { label: '待发货', value: '63', trend: '+2%', up: true }
+      ],
+      bars: [
+        { d: '周一', v: 68 }, { d: '周二', v: 82 }, { d: '周三', v: 76 }, { d: '周四', v: 91 },
+        { d: '周五', v: 118 }, { d: '周六', v: 104 }, { d: '周日', v: 73 }
+      ]
+    },
+    month: {
+      label: '近30日',
+      trendTitle: '近30日销售额',
+      kpis: [
+        { label: '近30日订单', value: '36,120', trend: '+15%', up: true },
+        { label: '近30日GMV', value: '¥2,480万', trend: '+10%', up: true },
+        { label: '新增用户', value: '8,574', trend: '+13%', up: true },
+        { label: '待发货', value: '58', trend: '-6%', up: false }
+      ],
+      bars: [
+        { d: '1-5日', v: 310 }, { d: '6-10日', v: 356 }, { d: '11-15日', v: 402 },
+        { d: '16-20日', v: 388 }, { d: '21-25日', v: 429 }, { d: '26-30日', v: 461 }
+      ]
+    }
+  };
+
+  var ORDERS = [
+    { no: 'ND20260808-0148', cust: '王明', amt: '¥3,240', status: '已付款' },
+    { no: 'ND20260808-0147', cust: '李娜', amt: '¥1,860', status: '待发货' },
+    { no: 'ND20260808-0146', cust: '陈浩', amt: '¥8,500', status: '已完成' },
+    { no: 'ND20260808-0145', cust: '赵倩', amt: '¥420', status: '待付款' },
+    { no: 'ND20260808-0144', cust: '周凯', amt: '¥2,175', status: '已完成' }
+  ];
+
+  var STATUS_CLASS = { '待付款': 'st-pay', '待发货': 'st-ship', '已付款': 'st-paid', '已完成': 'st-done' };
+  var RANGES = ['today', 'week', 'month'];
+
+  /* 状态:时间范围 + 选中图柱 + 订单筛选 */
+  var state = { range: 'today', selBar: -1, filter: '全部' };
+
+  function render() {
+    var d = DATA[state.range];
+    /* 时间范围 seg */
+    el('seg').innerHTML = RANGES.map(function (k) {
+      return '<button type="button" class="' + (state.range === k ? 'on' : '') + '" data-range="' + k + '">' + DATA[k].label + '</button>';
+    }).join('');
+    /* KPI 四卡 */
+    el('kpis').innerHTML = d.kpis.map(function (k) {
+      return '<div class="kpi"><div class="k-label">' + k.label + '</div><div class="k-value">' + k.value + '</div>' +
+        '<div class="k-trend ' + (k.up ? 'up' : 'down') + '">' + k.trend + ' 较上一周期</div></div>';
+    }).join('');
+    /* 趋势图标题 + 图柱 */
+    el('trendTitle').textContent = d.trendTitle;
+    var max = Math.max.apply(null, d.bars.map(function (b) { return b.v; }));
+    el('chartBars').innerHTML = d.bars.map(function (b, i) {
+      var h = Math.round(b.v / max * 100);
+      var sel = state.selBar === i ? ' sel' : '';
+      return '<div class="bar-col' + sel + '" data-i="' + i + '">' +
+        '<div class="bar" style="height:' + h + '%"></div><div class="bar-label">' + b.d + '</div></div>';
+    }).join('');
+    el('chartTip').textContent = state.selBar >= 0
+      ? d.bars[state.selBar].d + ' · 销售额 ' + d.bars[state.selBar].v + '万'
+      : d.label + ' · 点击图柱查看单日数值';
+    /* 状态筛选 chips */
+    el('chips').innerHTML = ['全部', '待付款', '待发货', '已付款', '已完成'].map(function (s) {
+      return '<button type="button" class="chip-p ' + (state.filter === s ? 'on' : '') + '" data-status="' + s + '">' + s + '</button>';
+    }).join('');
+    /* 订单行 */
+    var rows = ORDERS.filter(function (o) { return state.filter === '全部' || o.status === state.filter; });
+    el('ordCount').textContent = rows.length + ' 单';
+    el('ordBody').innerHTML = rows.map(function (o) {
+      return '<div class="ord-row"><span class="ord-no">' + o.no + '</span><span class="ord-cust">' + o.cust + '</span>' +
+        '<span class="ord-amt">' + o.amt + '</span><span class="st ' + STATUS_CLASS[o.status] + '">' + o.status + '</span></div>';
+    }).join('') || '<div class="ord-empty">暂无该状态订单</div>';
+  }
+
+  /* 事件委托:时间范围 / 图柱 / 状态筛选 */
+  document.addEventListener('click', function (e) {
+    var segBtn = e.target.closest('[data-range]');
+    if (segBtn) {
+      state.range = segBtn.getAttribute('data-range');
+      state.selBar = -1;
+      render();
+      return;
+    }
+    var bar = e.target.closest('.bar-col');
+    if (bar) {
+      state.selBar = +bar.getAttribute('data-i');
+      render();
+      return;
+    }
+    var chip = e.target.closest('[data-status]');
+    if (chip) {
+      state.filter = chip.getAttribute('data-status');
+      render();
+      return;
+    }
+  });
+
+  el('zonesToggle').addEventListener('change', function (e) {
+    document.body.classList.toggle('show-zones', e.target.checked);
+  });
+
+  el('reset').addEventListener('click', function () {
+    state = { range: 'today', selBar: -1, filter: '全部' };
+    render();
+  });
+
+  render();
+})();
+</script>
