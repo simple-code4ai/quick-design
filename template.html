@@ -64,17 +64,15 @@
   .show-zones .zone-label { opacity: 1; }
   /* 被标注的区域需要 position: relative(在③里给具体区域加) */
 
-  /* 画布尺寸标注(标题旁徽标):页面渲染非 1:1,徽标给出真实画布宽高 */
-  .canvas-annot {
-    display: inline-flex; align-items: center; gap: 6px;
-    font-size: 11px; font-weight: 500; vertical-align: middle;
-    color: var(--bp-text-2); background: var(--bp-panel);
-    border: 1px solid var(--bp-border); border-radius: 999px;
-    padding: 2px 10px; margin-left: 10px; white-space: nowrap;
-    letter-spacing: .02em;
+  /* 画布尺寸标注(交互稿正下方):页面渲染非 1:1,此标注给出真实画布宽高 */
+  .canvas-cap {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px;
+    font-size: 11px; color: var(--bp-text-3); margin-top: 8px;
   }
-  .canvas-annot b { font-family: var(--mono); font-weight: 500; letter-spacing: .01em; color: var(--accent-text); }
-  .show-zones .canvas-annot { border-color: var(--accent); color: var(--accent-text); background: var(--accent-soft); }
+  .canvas-cap .cap-name { font-weight: 600; color: var(--bp-text-2); }
+  .canvas-cap .cap-sep { color: var(--bp-text-3); }
+  .canvas-cap b { font-family: var(--mono); font-weight: 500; letter-spacing: .01em; color: var(--accent-text); background: var(--bp-panel); border: 1px solid var(--bp-border); border-radius: 999px; padding: 1px 10px; }
+  .show-zones .canvas-cap b { border-color: var(--accent); background: var(--accent-soft); }
   /* 图例 + 决策 */
   .legend { margin-top: 26px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   @media (max-width: 720px) { .legend { grid-template-columns: 1fr; } }
@@ -150,7 +148,7 @@
   <!-- ④ 定版标识:产品 · 里程碑 · 蓝图 · 日期 · v版本(随改随 bump) -->
   <p class="eyebrow"><产品> · <里程碑> · 蓝图 · 2026-08-08 · v1</p>
   <!-- ⑤ 一句话论点:这一稿在定什么 -->
-  <h1><这里写:这一稿定下的核心结构><span class="canvas-annot" title="页面非 1:1 渲染,此徽标给出真实画布宽高">画布 <b>1920×1080</b></span></h1>
+  <h1><这里写:这一稿定下的核心结构></h1>
   <!-- ⑥ 设计者立场:2~3 行 -->
   <p class="lede">
     <这里写:核心设计思路,为什么这么拆。>
@@ -190,6 +188,7 @@
     </div>
   </div>
 
+  <div class="canvas-cap"><span class="cap-name">交互稿</span><span class="cap-sep">·</span><span>画布</span> <b>1920×1080</b><span class="cap-sep">·</span><span class="cap-hint">页面渲染非 1:1,此为真实画布宽高</span></div>
   <!-- ⑨ 图例:固定层(accent 点)/ 动态层(danger 点) -->
   <div class="legend">
     <div class="card">
@@ -247,7 +246,7 @@
   });
 
   el('zonesToggle').addEventListener('change', function (e) {
-    // 作用在整个页面:骨架标签(界面区域 + 画布徽标)都会被点亮
+    // 作用在整个页面:骨架标签(界面区域 + 画布标注)都会被点亮
     document.body.classList.toggle('show-zones', e.target.checked);
   });
 

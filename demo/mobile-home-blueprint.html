@@ -65,17 +65,15 @@
   }
   .show-zones .zone-label { opacity: 1; }
 
-  /* 画布尺寸标注(标题旁徽标):页面渲染非 1:1,徽标给出真实画布宽高 */
-  .canvas-annot {
-    display: inline-flex; align-items: center; gap: 6px;
-    font-size: 11px; font-weight: 500; vertical-align: middle;
-    color: var(--bp-text-2); background: var(--bp-panel);
-    border: 1px solid var(--bp-border); border-radius: 999px;
-    padding: 2px 10px; margin-left: 10px; white-space: nowrap;
-    letter-spacing: .02em;
+  /* 画布尺寸标注(交互稿正下方):页面渲染非 1:1,此标注给出真实画布宽高 */
+  .canvas-cap {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px;
+    font-size: 11px; color: var(--bp-text-3); margin-top: 8px;
   }
-  .canvas-annot b { font-family: var(--mono); font-weight: 500; letter-spacing: .01em; color: var(--accent-text); }
-  .show-zones .canvas-annot { border-color: var(--accent); color: var(--accent-text); background: var(--accent-soft); }
+  .canvas-cap .cap-name { font-weight: 600; color: var(--bp-text-2); }
+  .canvas-cap .cap-sep { color: var(--bp-text-3); }
+  .canvas-cap b { font-family: var(--mono); font-weight: 500; letter-spacing: .01em; color: var(--accent-text); background: var(--bp-panel); border: 1px solid var(--bp-border); border-radius: 999px; padding: 1px 10px; }
+  .show-zones .canvas-cap b { border-color: var(--accent); background: var(--accent-soft); }
   /* 图例 + 决策 */
   .legend { margin-top: 26px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   @media (max-width: 720px) { .legend { grid-template-columns: 1fr; } }
@@ -216,7 +214,7 @@
   <!-- ④ 定版标识:产品 · 里程碑 · 蓝图 · 日期 · v版本 -->
   <p class="eyebrow">演示集 · 手机端 · 蓝图 · 2026-08-08 · v1</p>
   <!-- ⑤ 一句话论点 -->
-  <h1>手机端·首页:搜索 + 轮播 + 八宫格分类 + 双列推荐流,一屏之内「逛」为主、「找」为辅<span class="canvas-annot" title="页面非 1:1 渲染,此徽标给出真实画布宽高">画布 <b>390×844</b></span></h1>
+  <h1>手机端·首页:搜索 + 轮播 + 八宫格分类 + 双列推荐流,一屏之内「逛」为主、「找」为辅</h1>
   <!-- ⑥ 设计者立场 -->
   <p class="lede">
     手机首页是电商 App 的流量入口,一屏要塞进搜索、运营位、分类与推荐流。本稿把「搜索栏 / 轮播横幅 / 分类八宫格 / 底部 TabBar」
@@ -276,6 +274,7 @@
     </div>
   </div>
 
+  <div class="canvas-cap"><span class="cap-name">交互稿</span><span class="cap-sep">·</span><span>画布</span> <b>390×844</b><span class="cap-sep">·</span><span class="cap-hint">页面渲染非 1:1,此为真实画布宽高</span></div>
   <!-- ⑨ 图例 -->
   <div class="legend">
     <div class="card">
