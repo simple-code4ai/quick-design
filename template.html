@@ -64,6 +64,22 @@
   .show-zones .zone-label { opacity: 1; }
   /* 被标注的区域需要 position: relative(在③里给具体区域加) */
 
+  /* 适配标注:后台端 / 手机端 / 平板端 默认适配尺寸(与 index.js 的 ADAPT_PRESETS 保持一致;is-active 标本稿目标端) */
+  .adapt { position: relative; display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+  .adapt-item {
+    display: flex; align-items: center; gap: 8px; padding: 6px 10px;
+    border: 1px solid var(--bp-border); border-radius: 8px; background: var(--bp-panel);
+    font-size: 12px; color: var(--bp-text-2);
+  }
+  .adapt-item.is-active { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+  .adapt-kicker { font-size: 11px; color: var(--bp-text-3); white-space: nowrap; }
+  .adapt-item.is-active .adapt-kicker { color: var(--accent-text); }
+  .adapt-sizes { display: inline-flex; gap: 5px; }
+  .adapt-sizes code {
+    font-family: var(--mono); font-size: 11px; background: var(--bp-input);
+    border: 1px solid var(--bp-border); border-radius: 4px; padding: 0 5px; color: var(--accent-text);
+  }
+
   /* 图例 + 决策 */
   .legend { margin-top: 26px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   @media (max-width: 720px) { .legend { grid-template-columns: 1fr; } }
@@ -179,7 +195,24 @@
     </div>
   </div>
 
-  <!-- ⑨ 图例:固定层(accent 点)/ 动态层(danger 点) -->
+  <!-- ⑨ 适配标注:本稿默认适配的尺寸(默认值与 index.js 的 ADAPT_PRESETS 保持一致;is-active = 本稿目标端) -->
+  <div class="adapt" id="adaptZone">
+    <span class="zone-label">Adapt · 适配标注</span>
+    <div class="adapt-item is-active" data-adapt="admin">
+      <span class="adapt-kicker">后台端默认适配</span>
+      <span class="adapt-sizes"><code>1920×1080</code><code>1440×900</code></span>
+    </div>
+    <div class="adapt-item" data-adapt="mobile">
+      <span class="adapt-kicker">手机端默认适配</span>
+      <span class="adapt-sizes"><code>390×844</code><code>375×667</code></span>
+    </div>
+    <div class="adapt-item" data-adapt="tablet">
+      <span class="adapt-kicker">平板端默认适配</span>
+      <span class="adapt-sizes"><code>768×1024</code><code>820×1180</code></span>
+    </div>
+  </div>
+
+  <!-- ⑩ 图例:固定层(accent 点)/ 动态层(danger 点) -->
   <div class="legend">
     <div class="card">
       <h3><span class="dot fixed"></span> 固定层 · 骨架(代码写死)</h3>
@@ -197,7 +230,7 @@
     </div>
   </div>
 
-  <!-- ⑩ 决策清单:编号,写"为什么"。改布局必须同步改这里 -->
+  <!-- ⑪ 决策清单:编号,写"为什么"。改布局必须同步改这里 -->
   <div class="notes">
     <h3 style="font-size:13px;color:var(--bp-text);margin:0 0 8px;">布局决策</h3>
     <ol>
@@ -206,7 +239,7 @@
     </ol>
   </div>
 
-  <!-- ⑪ 配色溯源:注明你用了项目哪个令牌来源(theme 文件 / 设计规范) -->
+  <!-- ⑫ 配色溯源:注明你用了项目哪个令牌来源(theme 文件 / 设计规范) -->
   <div class="footer">配色取自本项目设计令牌(<注明来源,如 theme 文件路径 / 设计规范文档>)。</div>
 </div>
 
@@ -236,7 +269,8 @@
   });
 
   el('zonesToggle').addEventListener('change', function (e) {
-    el('surface').classList.toggle('show-zones', e.target.checked);
+    // 作用在整个页面:骨架标签(界面区域 + 适配标注)都会被点亮
+    document.body.classList.toggle('show-zones', e.target.checked);
   });
 
   el('reset').addEventListener('click', function () {

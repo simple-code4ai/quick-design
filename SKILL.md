@@ -15,7 +15,7 @@ description: 生成「可交互蓝图」——用项目真实设计令牌渲染�
 
 1. **定目录(初始化)**:查项目 CLAUDE.md —— 已记录 quick-design 设计目录则直接用;没有则**先问用户「设计文件目录放哪」**(典型两种:直接指向项目根,如 `package.json`/`pom.xml` 所在;或按开发习惯放在项目子目录、与 `docs/` 同级等任意位置)。确认后把该目录**记入项目 CLAUDE.md**(不存在则新建),并把本 skill 目录(`${CLAUDE_SKILL_DIR}`)的 `index.html` / `index.js` / `template.html` 复制过去完成初始化。
 2. **准备**:读项目 CLAUDE.md / 设计令牌源 / 相关架构文档 / 真实数据形状。回复开头一行列出:`已读:<令牌源>/<架构文档>/<数据来源>;产物将落在:<设计目录>`。
-3. **生成**:从 `template.html` 起手,按 `DEFINITION.md` 的 11 部件结构产出单文件 `.html`,落盘到 `<设计目录>/<界面名>-blueprint.html`。关键交互必须可点;用真实内容,不用 lorem。
+3. **生成**:从 `template.html` 起手,按 `DEFINITION.md` 的 12 部件结构产出单文件 `.html`,落盘到 `<设计目录>/<界面名>-blueprint.html`。关键交互必须可点;用真实内容,不用 lorem。⑨ 适配标注的默认尺寸与 `index.js` 的 `ADAPT_PRESETS` 一致,`is-active` 指向本稿目标端。
 4. **登记进清单**:确保 `<设计目录>` 存在;若 `index.html` / `index.js` / `template.html` 不在其中,从本 skill 目录(`${CLAUDE_SKILL_DIR}`)复制过来。**先读现有 `index.js`,把新节点追加进 `BLUEPRINTS`(蓝图叶子 `{id,title,file,version,updated}`,或文件夹 `{id,title,children:[…]}`,支持树形嵌套),禁止整体重建**(文件不存在时除外);`index.js` 内置一条默认示例,生成真实蓝图后可删。
 5. **交付**:回复给「文件路径 + 当前版本号 + 待确认决策项列表」。
 
@@ -34,5 +34,6 @@ description: 生成「可交互蓝图」——用项目真实设计令牌渲染�
 2. □ 双击直开、声明的交互真的可点(经 render() 重绘),不是假按钮
 3. □ 真实内容、无 lorem;固定区有 zone-label;图例 + 决策 + 配色溯源齐全
 4. □ eyebrow 版本号与决策清单一致;骨架与内容解耦
-5. □ 设计文件目录已确认并记入项目 CLAUDE.md;`index.html` / `index.js` / `template.html` 已在目录中就位
-6. □ `index.js` 的 `BLUEPRINTS` 已登记,刷新索引页 Tree 可见新条目
+5. □ 适配标注(⑨)三组卡齐全、`is-active` 指向本稿目标端,尺寸与 `index.js` 的 `ADAPT_PRESETS` 一致
+6. □ 设计文件目录已确认并记入项目 CLAUDE.md;`index.html` / `index.js` / `template.html` 已在目录中就位
+7. □ `index.js` 的 `BLUEPRINTS` 已登记,刷新索引页 Tree 可见新条目

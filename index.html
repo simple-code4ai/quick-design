@@ -33,6 +33,13 @@
     border-radius: 6px; padding: 5px 12px; font-family: var(--sans); font-size: 12px; cursor: pointer;
   }
   header button:hover { background: var(--bg-hover); color: var(--text); }
+  header select {
+    background: var(--bg-input); color: var(--text); border: 1px solid var(--border);
+    border-radius: 6px; padding: 4px 8px; font-family: var(--sans); font-size: 12px; cursor: pointer;
+    max-width: 160px;
+  }
+  header select:hover { background: var(--bg-hover); }
+  header .adapt-cap { font-size: 11px; color: var(--text-3); }
 
   main { flex: 1; min-height: 0; display: flex; }
 
@@ -93,7 +100,20 @@
   .empty { padding: 18px 10px; font-size: 12px; color: var(--text-3); line-height: 1.7; }
   .empty b { color: var(--text-2); }
 
-  iframe#preview { flex: 1; min-width: 0; border: none; background: var(--bg-page); }
+  /* 预览舞台:默认铺满;选中适配尺寸后,把 iframe 按该宽高等比缩放居中 */
+  #previewStage {
+    flex: 1; min-width: 0; overflow: auto;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #previewBox {
+    flex: none; width: 100%; height: 100%;
+    display: flex; align-items: flex-start; justify-content: flex-start;
+    overflow: hidden;
+  }
+  #previewBox iframe {
+    width: 100%; height: 100%; border: none; background: var(--bg-page);
+    transform-origin: 0 0;
+  }
 
   footer {
     flex: 0 0 26px; display: flex; align-items: center; padding: 0 14px;
@@ -106,12 +126,20 @@
 <header>
   <span class="brand">设计稿<em>蓝图索引 · 左点预览</em></span>
   <span class="spacer"></span>
+  <span class="adapt-cap">适配</span>
+  <select id="adaptSel" title="按适配尺寸预览(自定义见 index.js 的 ADAPT_PRESETS)">
+    <option value="auto">自适应</option>
+  </select>
   <button id="refresh">↺ 刷新</button>
 </header>
 
 <main>
   <nav id="tree"></nav>
-  <iframe id="preview" src="about:blank"></iframe>
+  <div id="previewStage">
+    <div id="previewBox">
+      <iframe id="preview" src="about:blank"></iframe>
+    </div>
+  </div>
 </main>
 
 <footer id="status"></footer>
@@ -121,9 +149,52 @@
   /* 蓝图清单在 index.js(var BLUEPRINTS = [...]);
      由 AI 在生成/修改蓝图后维护。这里兜底:文件缺失/加载失败时用空数组。 */
   var BLUEPRINTS = typeof window.BLUEPRINTS !== 'undefined' ? window.BLUEPRINTS : [];
+  var ADAPT_PRESETS = typeof window.ADAPT_PRESETS !== 'undefined' ? window.ADAPT_PRESETS : [];
 
   var el = function (id) { return document.getElementById(id); };
   var selected = null;
+
+  /* ── 适配下拉:从 index.js 的 ADAPT_PRESETS 构建 ── */
+  var adaptSel = el('adaptSel');
+  adaptSel.innerHTML = '<option value="auto">自适应</option>';
+  ADAPT_PRESETS.forEach(function (group) {
+    var og = document.createElement('optgroup');
+    og.label = group.title;
+    group.items.forEach(function (item) {
+      var o = document.createElement('option');
+      o.value = item.w + 'x' + item.h;
+      o.textContent = item.label;
+      og.appendChild(o);
+    });
+    adaptSel.appendChild(og);
+  });
+  if (!ADAPT_PRESETS.length) adaptSel.style.display = 'none';
+
+  /* 按选中尺寸把 iframe 等比缩放、居中放入预览舞台 */
+  function applyAdapt() {
+    var frame = el('preview');
+    var box = el('previewBox');
+    var stage = el('previewStage');
+    var v = adaptSel.value;
+    if (v === 'auto') {
+      frame.style.width = ''; frame.style.height = '';
+      frame.style.transform = 'none';
+      box.style.width = ''; box.style.height = '';
+      return;
+    }
+    var m = v.split('x');
+    var w = parseInt(m[0], 10), h = parseInt(m[1], 10);
+    var avail = stage.clientWidth - 24;             /* 留点边距 */
+    var availH = stage.clientHeight - 24;
+    var scale = Math.min(1, avail / w, availH / h); /* 只缩小,不放大 */
+    frame.style.width = w + 'px';
+    frame.style.height = h + 'px';
+    frame.style.transform = 'scale(' + scale + ')';
+    box.style.width = Math.round(w * scale) + 'px';
+    box.style.height = Math.round(h * scale) + 'px';
+  }
+  adaptSel.addEventListener('change', applyAdapt);
+  window.addEventListener('resize', applyAdapt);
 
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, function (c) {
