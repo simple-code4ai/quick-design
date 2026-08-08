@@ -2,6 +2,8 @@
 
 **语言 / Language:** [English](https://github.com/simple-code4ai/quick-design-en)
 
+**在线体验(Live demo):** [simple-code4ai.github.io/quick-design](https://simple-code4ai.github.io/quick-design/)(蓝图浏览器,点左栏条目可交互预览)
+
 一个 Claude Code Skill:把一句话需求变成**可点的交互式 HTML 设计稿**。
 
 单文件、浏览器直开、零依赖。它叫「可交互蓝图」——用项目真实设计令牌渲染、关键行为能上手点,既是设计文档也是可操作原型。
