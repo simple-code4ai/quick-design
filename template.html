@@ -1,0 +1,249 @@
+<title>可交互蓝图 · <界面名> 设计稿 · v1</title>
+
+<style>
+  /* ══════════════════════════════════════════════════════════
+     ① 令牌:两套
+       A. 蓝图外壳:设计稿页面自身的外观(本段基本不用改,中性即可)
+       B. 产品示例:下面是「示例值」,用来让模板直接能渲染。
+          开工前务必替换成你【当前项目】自己的设计令牌——
+          从项目的 theme / tokens / CLAUDE.md 提取,或直接问用户。
+          示例值来自某个暗色 IDE 主题,仅作演示,不是标准。
+     ══════════════════════════════════════════════════════════ */
+  :root {
+    /* A. 蓝图外壳 */
+    --bp-page: #1b1d20;
+    --bp-panel: #222529;
+    --bp-input: #2b2d30;
+    --bp-border: #33363b;
+    --bp-text: #a9b7c6;
+    --bp-text-2: #8b949e;
+    --bp-text-3: #6a737b;
+
+    /* B. 产品示例(替换为你项目的令牌) */
+    --bg: #2b2d30;          /* 主背景 */
+    --bg-surface: #2f3135;  /* 面板/停靠背景 */
+    --bg-hover: #3e4144;    /* 悬停 */
+    --border: #4e5254;      /* 分割线 */
+    --text: #a9b7c6;        /* 主文字 */
+    --text-muted: #8b949e;  /* 次级文字 */
+    --text-dim: #6a737b;    /* 弱化文字 */
+    --danger: #c75450;      /* 危险 */
+    --accent: #4b6eaf;      /* 聚焦/选中 */
+    --accent-soft: #3a567f;
+    --accent-text: #a9c2ea;
+    --mono: ui-monospace, "Cascadia Mono", Consolas, "Courier New", monospace;
+    --sans: "Segoe UI", system-ui, -apple-system, "Microsoft YaHei", "PingFang SC", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bp-page); color: var(--bp-text); font-family: var(--sans); font-size: 14px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  .page { max-width: 1120px; margin: 0 auto; padding: 40px 24px 64px; }
+
+  /* 页头 */
+  .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-text); margin: 0 0 10px; }
+  h1 { font-size: 30px; font-weight: 650; color: #d8e0ea; margin: 0 0 10px; }
+  .lede { font-size: 14px; color: var(--bp-text-2); max-width: 820px; margin: 0 0 22px; }
+
+  /* 控件条:显示分区开关 + 重置 + 操作提示 */
+  .controls { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 16px; font-size: 12.5px; color: var(--bp-text-2); }
+  .chip { display: flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--bp-border); border-radius: 999px; cursor: pointer; background: var(--bp-panel); color: var(--bp-text); user-select: none; }
+  .chip input { accent-color: var(--accent); }
+  .controls button { background: var(--bp-panel); color: var(--bp-text); border: 1px solid var(--bp-border); border-radius: 6px; padding: 4px 10px; font-family: var(--sans); font-size: 12.5px; cursor: pointer; }
+  .controls button:hover { background: var(--bp-input); }
+  .hint { flex: 1 1 100%; color: var(--bp-text-3); font-size: 12px; }
+
+  .mock-scroll { overflow-x: auto; padding-bottom: 6px; }
+
+  /* 分区标注:骨架可视化。每个固定区域顶部挂一个 <span class="zone-label">名称 · 尺寸</span> */
+  .zone-label {
+    position: absolute; top: 4px; left: 50%; transform: translateX(-50%);
+    font-size: 10px; letter-spacing: .05em; color: var(--accent-text);
+    background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 4px;
+    padding: 1px 7px; white-space: nowrap; z-index: 40;
+    opacity: 0; pointer-events: none; transition: opacity .15s ease;
+  }
+  .show-zones .zone-label { opacity: 1; }
+  /* 被标注的区域需要 position: relative(在③里给具体区域加) */
+
+  /* 图例 + 决策 */
+  .legend { margin-top: 26px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 720px) { .legend { grid-template-columns: 1fr; } }
+  .card { background: var(--bp-panel); border: 1px solid var(--bp-border); border-radius: 8px; padding: 16px 18px; }
+  .card h3 { margin: 0 0 10px; font-size: 13px; color: var(--bp-text); display: flex; align-items: center; gap: 8px; }
+  .card h3 .dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+  .dot.fixed { background: var(--accent); }
+  .dot.dyn { background: var(--danger); }
+  .card ul { list-style: none; margin: 0; padding: 0; }
+  .card li { font-size: 12.5px; color: var(--bp-text-2); padding: 4px 0; display: flex; gap: 8px; }
+  .card li b { color: var(--bp-text); font-weight: 600; white-space: nowrap; }
+  .card li .d { color: var(--bp-text-3); font-size: 11.5px; margin-left: auto; white-space: nowrap; align-self: center; }
+  .card li code { font-family: var(--mono); font-size: 11px; background: var(--bp-input); border: 1px solid var(--bp-border); border-radius: 4px; padding: 0 5px; color: var(--accent-text); }
+  .notes { margin-top: 16px; }
+  .notes ol { margin: 0; padding-left: 20px; }
+  .notes li { font-size: 12.5px; color: var(--bp-text-2); padding: 3px 0; }
+  .notes li b { color: var(--bp-text); }
+  .footer { margin-top: 24px; font-size: 11.5px; color: var(--bp-text-3); }
+  .footer code { font-family: var(--mono); font-size: 11px; color: var(--accent-text); }
+
+  /* ══════════════════════════════════════════════════════════
+     ③ 产品示例样式:下面是一个「示例界面本体」(标题栏 + 侧栏导航 + 主内容 + 状态栏),
+       只用来演示"蓝图格式长什么样",不是你要设计的东西。
+       —— 把这一整块替换成你正在设计的界面。
+       —— 界面样式一律用 B 组产品令牌(--bg/--text/--accent…),不许写死色值。
+       —— 想演示"固定/动态分层",把几个固定区(侧栏/标题栏/状态栏…)
+         挂上 zone-label 即可;具体长什么样由你的项目决定。
+     ══════════════════════════════════════════════════════════ */
+  .surface {
+    width: 760px; height: 360px;
+    background: var(--bg);
+    border: 1px solid var(--bp-border); border-radius: 8px;
+    display: flex; flex-direction: column; overflow: hidden;
+    position: relative;
+  }
+  .titlebar {
+    height: 36px; flex: 0 0 36px;
+    display: flex; align-items: center; padding: 0 12px;
+    background: var(--bg); border-bottom: 1px solid var(--border);
+    font-size: 13px; color: var(--text);
+    position: relative;
+  }
+  .body-row { flex: 1; min-height: 0; display: flex; }
+  .sidebar {
+    width: 180px; flex: 0 0 180px;
+    background: var(--bg-surface); border-right: 1px solid var(--border);
+    padding: 8px; display: flex; flex-direction: column; gap: 2px;
+    position: relative;
+  }
+  .nav-item {
+    padding: 6px 10px; border-radius: 6px;
+    font-size: 12.5px; color: var(--text-muted);
+    cursor: pointer;
+  }
+  .nav-item:hover { background: var(--bg-hover); color: var(--text); }
+  .nav-item.active { background: var(--accent-soft); color: var(--accent-text); }
+  .main { flex: 1; min-width: 0; background: var(--bg); padding: 12px; display: flex; flex-direction: column; gap: 10px; position: relative; }
+  .panel {
+    background: var(--bg-surface); border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px; font-size: 12px; color: var(--text-muted);
+  }
+  .panel h4 { margin: 0 0 6px; font-size: 11px; color: var(--text-dim); letter-spacing: .05em; }
+  .statusbar {
+    height: 24px; flex: 0 0 24px;
+    display: flex; align-items: center; padding: 0 10px;
+    background: var(--bg-surface); border-top: 1px solid var(--border);
+    font-size: 11px; color: var(--text-muted);
+    position: relative;
+  }
+</style>
+
+<div class="page">
+  <!-- ④ 定版标识:产品 · 里程碑 · 蓝图 · 日期 · v版本(随改随 bump) -->
+  <p class="eyebrow"><产品> · <里程碑> · 蓝图 · 2026-08-08 · v1</p>
+  <!-- ⑤ 一句话论点:这一稿在定什么 -->
+  <h1><这里写:这一稿定下的核心结构></h1>
+  <!-- ⑥ 设计者立场:2~3 行 -->
+  <p class="lede">
+    <这里写:核心设计思路,为什么这么拆。>
+  </p>
+
+  <!-- ⑦ 交互开关 + 操作引导(「显示分区」务必保留,其余按需) -->
+  <div class="controls">
+    <label class="chip"><input type="checkbox" id="zonesToggle"> 显示分区(骨架)</label>
+    <button id="reset">↺ 重置默认布局</button>
+    <span class="hint"><这里写:这个蓝图能点什么、看什么。></span>
+  </div>
+
+  <div class="mock-scroll">
+    <!-- ⑧ 示例界面本体:把下面这坨替换成你设计的界面(真实尺寸、真实内容) -->
+    <div class="surface" id="surface">
+      <div class="titlebar">应用标题<span class="zone-label">TitleBar · 36px</span></div>
+      <div class="body-row">
+        <div class="sidebar" id="demoSidebar">
+          <div class="nav-item active" data-page="概览">概览</div>
+          <div class="nav-item" data-page="列表">列表</div>
+          <div class="nav-item" data-page="设置">设置</div>
+          <span class="zone-label">Sidebar · 180px</span>
+        </div>
+        <div class="main">
+          <div class="panel">
+            <h4>内容面板(固定层示例)</h4>
+            <div id="demoContent">(点左侧导航切换这里)</div>
+          </div>
+          <div class="panel">
+            <h4>次要面板</h4>
+            示例内容——替换成你的。
+          </div>
+          <span class="zone-label">Main</span>
+        </div>
+      </div>
+      <div class="statusbar">就绪<span class="zone-label">StatusBar · 24px</span></div>
+    </div>
+  </div>
+
+  <!-- ⑨ 图例:固定层(accent 点)/ 动态层(danger 点) -->
+  <div class="legend">
+    <div class="card">
+      <h3><span class="dot fixed"></span> 固定层 · 骨架(代码写死)</h3>
+      <ul>
+        <li><b><区域></b><span class="d"><尺寸></span></li>
+        <li><b><区域></b><span class="d"><尺寸></span></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3><span class="dot dyn"></span> 动态层 · 内容(状态/注册表加载)</h3>
+      <ul>
+        <li><b><面板></b> <code>{ id, title, zone, load() }</code></li>
+        <li><b><面板></b><span class="d">容器形态</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ⑩ 决策清单:编号,写"为什么"。改布局必须同步改这里 -->
+  <div class="notes">
+    <h3 style="font-size:13px;color:var(--bp-text);margin:0 0 8px;">布局决策</h3>
+    <ol>
+      <li><b>决策一</b>:……(为什么)</li>
+      <li><b>决策二</b>:……(为什么)</li>
+    </ol>
+  </div>
+
+  <!-- ⑪ 配色溯源:注明你用了项目哪个令牌来源(theme 文件 / 设计规范) -->
+  <div class="footer">配色取自本项目设计令牌(<注明来源,如 theme 文件路径 / 设计规范文档>)。</div>
+</div>
+
+<script>
+(function () {
+  /* ══ 通用 JS 脚手架 ══
+     骨架 + 状态 + render() + 事件委托,是交互蓝图的四个固定动作:
+     1. 数据(注册表/状态)→ 2. render() 一次性重绘 → 3. 事件委托改状态 → 4. 再 render()。
+     结构类改动改 CSS/DOM,行为类改动改这里。 */
+  var el = function (id) { return document.getElementById(id); };
+
+  /* 例:一个简单的"侧栏导航 + 切换内容"(替换成你的) */
+  var pages = { '概览': '概览页内容(示例)', '列表': '列表页内容(示例)', '设置': '设置页内容(示例)' };
+  var current = '概览';
+
+  function render() {
+    el('demoContent').textContent = pages[current];
+    var items = document.querySelectorAll('#demoSidebar .nav-item');
+    for (var i = 0; i < items.length; i++) {
+      items[i].classList.toggle('active', items[i].getAttribute('data-page') === current);
+    }
+  }
+
+  document.addEventListener('click', function (e) {
+    var nav = e.target.closest('#demoSidebar .nav-item');
+    if (nav) { current = nav.getAttribute('data-page'); render(); return; }
+  });
+
+  el('zonesToggle').addEventListener('change', function (e) {
+    el('surface').classList.toggle('show-zones', e.target.checked);
+  });
+
+  el('reset').addEventListener('click', function () {
+    current = '概览';
+    render();
+  });
+
+  render();
+})();
+</script>
