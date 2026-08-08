@@ -1,0 +1,7 @@
+# 系统 / 编辑器
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# 本地测试产物(若把示例蓝图留在仓库里,不忽略)

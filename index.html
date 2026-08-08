@@ -1,0 +1,211 @@
+<title>设计稿 · 蓝图索引</title>
+
+<style>
+  /* 蓝图浏览器外壳(中性暗色,与蓝图「外壳令牌」一致) */
+  :root {
+    --bg-page: #1b1d20;
+    --bg-panel: #222529;
+    --bg-input: #2b2d30;
+    --bg-hover: #2b2d30;
+    --border: #33363b;
+    --text: #a9b7c6;
+    --text-2: #8b949e;
+    --text-3: #6a737b;
+    --accent: #4b6eaf;
+    --accent-soft: #3a567f;
+    --accent-text: #a9c2ea;
+    --mono: ui-monospace, "Cascadia Mono", Consolas, "Courier New", monospace;
+    --sans: "Segoe UI", system-ui, -apple-system, "Microsoft YaHei", "PingFang SC", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--bg-page); color: var(--text); font-family: var(--sans); font-size: 13px; display: flex; flex-direction: column; }
+
+  header {
+    flex: 0 0 44px; display: flex; align-items: center; gap: 12px; padding: 0 14px;
+    background: var(--bg-panel); border-bottom: 1px solid var(--border);
+  }
+  .brand { font-size: 13px; font-weight: 650; color: var(--accent-text); }
+  .brand em { font-style: normal; font-weight: 400; color: var(--text-3); margin-left: 8px; font-size: 11px; }
+  header .spacer { flex: 1; }
+  header button {
+    background: var(--bg-input); color: var(--text); border: 1px solid var(--border);
+    border-radius: 6px; padding: 5px 12px; font-family: var(--sans); font-size: 12px; cursor: pointer;
+  }
+  header button:hover { background: var(--bg-hover); color: var(--text); }
+
+  main { flex: 1; min-height: 0; display: flex; }
+
+  /* ── 左:文件树 ─────────────────────────────── */
+  nav#tree {
+    flex: 0 0 280px; min-width: 200px; overflow-y: auto;
+    background: var(--bg-panel); border-right: 1px solid var(--border);
+    padding: 6px; display: flex; flex-direction: column; gap: 1px;
+  }
+
+  /* 行(文件夹 / 蓝图统一单行) */
+  .folder, .item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 3px 8px; border-radius: 5px; cursor: pointer;
+    font-size: 12.5px; line-height: 22px; white-space: nowrap;
+    transition: background .12s ease;
+  }
+  .folder { font-weight: 600; color: var(--text-2); user-select: none; }
+  .folder:hover { background: var(--bg-hover); color: var(--text); }
+  .folder .label, .item .label { overflow: hidden; text-overflow: ellipsis; }
+
+  /* 折叠箭头:纯 CSS 三角形(不依赖字形) */
+  .caret {
+    flex: 0 0 7px; width: 7px; height: 7px; margin-left: 2px;
+    border-right: 1.6px solid var(--text-3);
+    border-bottom: 1.6px solid var(--text-3);
+    transform: rotate(45deg);              /* 展开:箭头朝下 */
+    transition: transform .15s ease;
+  }
+  .group.closed .caret { transform: rotate(-45deg); }  /* 折叠:箭头朝右 */
+
+  /* 子层级:引导线 + 缩进 */
+  .children { margin-left: 13px; padding-left: 8px; border-left: 1px solid var(--border); }
+  .group.closed .children { display: none; }
+
+  /* 蓝图叶子:圆点 + 标题 + hover 浮出路径 */
+  .item { color: var(--text); position: relative; }
+  .item:hover { background: var(--bg-hover); }
+  .item.active { background: var(--accent-soft); }
+  .item.active::before {
+    content: ""; position: absolute; left: 0; top: 3px; bottom: 3px; width: 2px;
+    border-radius: 2px; background: var(--accent);
+  }
+  .item.active .label { color: var(--accent-text); }
+  .dot {
+    flex: 0 0 6px; width: 6px; height: 6px; border-radius: 2px;
+    background: var(--text-3); transition: background .15s ease;
+  }
+  .item:hover .dot { background: var(--text-2); }
+  .item.active .dot { background: var(--accent); }
+  .item .file {
+    margin-left: auto; font-family: var(--mono); font-size: 10.5px; color: var(--text-3);
+    overflow: hidden; text-overflow: ellipsis; max-width: 50%;
+    opacity: 0; transition: opacity .15s ease;
+  }
+  .item:hover .file, .item.active .file { opacity: 1; }
+
+  .empty { padding: 18px 10px; font-size: 12px; color: var(--text-3); line-height: 1.7; }
+  .empty b { color: var(--text-2); }
+
+  iframe#preview { flex: 1; min-width: 0; border: none; background: var(--bg-page); }
+
+  footer {
+    flex: 0 0 26px; display: flex; align-items: center; padding: 0 14px;
+    background: var(--bg-panel); border-top: 1px solid var(--border);
+    font-size: 11px; color: var(--text-3);
+  }
+  footer code { font-family: var(--mono); color: var(--text-2); }
+</style>
+
+<header>
+  <span class="brand">设计稿<em>蓝图索引 · 左点预览</em></span>
+  <span class="spacer"></span>
+  <button id="refresh">↺ 刷新</button>
+</header>
+
+<main>
+  <nav id="tree"></nav>
+  <iframe id="preview" src="about:blank"></iframe>
+</main>
+
+<footer id="status"></footer>
+
+<script src="index.js"></script>
+<script>
+  /* 蓝图清单在 index.js(var BLUEPRINTS = [...]);
+     由 AI 在生成/修改蓝图后维护。这里兜底:文件缺失/加载失败时用空数组。 */
+  var BLUEPRINTS = typeof window.BLUEPRINTS !== 'undefined' ? window.BLUEPRINTS : [];
+
+  var el = function (id) { return document.getElementById(id); };
+  var selected = null;
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  /* 树里「蓝图叶子」的个数(文件夹不计) */
+  function countLeaves(nodes) {
+    var n = 0;
+    nodes.forEach(function (node) { n += node.children ? countLeaves(node.children) : 1; });
+    return n;
+  }
+
+  function select(node) {
+    selected = node;
+    var items = document.querySelectorAll('#tree .item');
+    for (var k = 0; k < items.length; k++) items[k].classList.toggle('active', items[k].__node === node);
+    var b = node && node.file ? node : null;
+    el('preview').src = b ? b.file : 'about:blank';
+    el('status').innerHTML = b
+      ? ('正在预览 <code>' + escapeHtml(b.file) + '</code> · ' + escapeHtml(b.version || '') + ' · ' + escapeHtml(b.updated || ''))
+      : '点左侧设计稿在右侧预览';
+  }
+
+  /* 递归渲染:文件夹(children)可折叠,蓝图(file)可点选 */
+  function renderNodes(container, nodes) {
+    nodes.forEach(function (node) {
+      if (node.children && node.children.length) {
+        var group = document.createElement('div');
+        group.className = 'group';
+        var f = document.createElement('div');
+        f.className = 'folder';
+        var caret = document.createElement('span');
+        caret.className = 'caret';
+        var lbl = document.createElement('span');
+        lbl.className = 'label';
+        lbl.textContent = node.title;
+        f.appendChild(caret);
+        f.appendChild(lbl);
+        var list = document.createElement('div');
+        list.className = 'children';
+        renderNodes(list, node.children);
+        f.addEventListener('click', function () { group.classList.toggle('closed'); });
+        group.appendChild(f);
+        group.appendChild(list);
+        container.appendChild(group);
+      } else if (node.file) {
+        var item = document.createElement('div');
+        item.className = 'item';
+        item.__node = node;
+        var dot = document.createElement('span');
+        dot.className = 'dot';
+        var ilbl = document.createElement('span');
+        ilbl.className = 'label';
+        ilbl.textContent = node.title;
+        var file = document.createElement('span');
+        file.className = 'file';
+        file.textContent = node.file;
+        item.appendChild(dot);
+        item.appendChild(ilbl);
+        item.appendChild(file);
+        item.addEventListener('click', function () { select(node); });
+        container.appendChild(item);
+      }
+    });
+  }
+
+  function render() {
+    var tree = el('tree');
+    tree.innerHTML = '';
+    if (!countLeaves(BLUEPRINTS)) {
+      tree.innerHTML = '<div class="empty"><b>还没有登记的设计稿。</b><br>让 AI 生成蓝图后会登记进 index.js。</div>';
+      el('status').textContent = '0 个设计稿 · 清单在 index.js,由 AI 生成后登记';
+      return;
+    }
+    renderNodes(tree, BLUEPRINTS);
+    el('status').textContent = countLeaves(BLUEPRINTS) + ' 个设计稿 · 点左侧在右侧预览';
+    if (selected) select(selected);
+  }
+
+  el('refresh').addEventListener('click', function () { location.reload(); });
+
+  render();
+</script>
