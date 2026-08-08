@@ -1,32 +1,36 @@
 # quick-design · 设计稿
 
+**语言 / Language:** [English](https://github.com/simple-code4ai/quick-design-en)
+
 一个 Claude Code Skill:把一句话需求变成**可点的交互式 HTML 设计稿**。
 
 单文件、浏览器直开、零依赖。它叫「可交互蓝图」——用项目真实设计令牌渲染、关键行为能上手点,既是设计文档也是可操作原型。
 
 ## 安装
 
-在 **quick-design 仓库所在目录**里执行。命令会排除 `.git`,只安装 skill 本体。
+**一行命令(推荐,需 Node.js 环境)**
 
-**macOS / Linux / Git Bash / WSL(个人级,所有项目可用)**
+直接从 GitHub 拉取、装成干净副本(安装物不含 `.git`)。
 
 ```bash
-mkdir -p ~/.claude/skills \
-  && cp -R quick-design ~/.claude/skills/ \
-  && rm -rf ~/.claude/skills/quick-design/.git
+npx skills add -g simple-code4ai/quick-design -a claude-code   # 全局(所有项目可用)
+npx skills add simple-code4ai/quick-design -a claude-code      # 项目级(仅当前项目)
 ```
 
-**Windows PowerShell(个人级;`robocopy` 退出码 0–7 均为成功)**
+> `-a claude-code` 指定装成真实文件而非符号链接(Windows 上更稳);要装给其它 agent(如 Cursor / Codex),换成对应名字。升级:`npx skills update quick-design`。
 
-```powershell
-robocopy quick-design "$env:USERPROFILE\.claude\skills\quick-design" /E /XD .git
+**手动安装(备选,无需 Node.js,用 git)**
+
+直接 `git clone` 到目标位置(git 会自动创建父目录;克隆保留 `.git`,升级用 `git pull`):
+
+```bash
+git clone https://github.com/simple-code4ai/quick-design.git ~/.claude/skills/quick-design      # 全局(所有项目可用)
+git clone https://github.com/simple-code4ai/quick-design.git .claude/skills/quick-design        # 项目级(仅当前项目)
 ```
 
-> cmd 里把 `$env:USERPROFILE` 换成 `%USERPROFILE%`(cmd 不展开 `~`)。
+> 升级:`git -C ~/.claude/skills/quick-design pull`。项目级安装是**本机专属**,换机器 / 重新 clone 后需重跑,或把 `.claude/skills/` 提交进项目共享。
 
-**项目级(仅当前项目)**:把目标换成 `<项目>/.claude/skills/`(Windows 为 `"<项目>\.claude\skills\quick-design"`)。项目级安装是**本机专属**,换机器 / 重新 clone 后需重跑,或把 `.claude/skills/` 提交进项目共享。
-
-> 注:设置了环境变量 `CLAUDE_CONFIG_DIR` 时,`~/.claude` 整体被它替代。安装的是 skill 本体文件(含 `README.md`),不含 `.git`。
+> 注:设置了环境变量 `CLAUDE_CONFIG_DIR` 时,`~/.claude` 整体被它替代。
 
 重启 Claude Code 会话即可。
 
